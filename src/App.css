@@ -919,138 +919,194 @@ body {
   background: var(--nssa-cream);
 }
 
-.latest-gazette {
-  max-width: 1050px;
-  margin: 0 auto 100px;
-
-  padding: 55px;
-
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  align-items: center;
-  gap: 70px;
-
+.gazette-state {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px;
+  text-align: center;
   background: var(--nssa-white);
-  border-radius: 16px;
   border: 1px solid #eeeeee;
+  border-radius: 14px;
+  color: var(--nssa-gray);
+}
 
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+.latest-gazette {
+  max-width: 1120px;
+  margin: 0 auto 100px;
+  padding: 48px;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 64px;
+  background: var(--nssa-white);
+  border: 1px solid #e8e8e8;
+  border-radius: 18px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.07);
+}
+
+.latest-gazette-cover {
+  position: relative;
+  width: 100%;
+  max-width: 390px;
+  margin: 0 auto;
+}
+
+.gazette-cover-link {
+  position: relative;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.gazette-cover-frame {
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 8.5 / 11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+.gazette-cover-frame .react-pdf__Document,
+.gazette-cover-frame .react-pdf__Page {
+  width: 100%;
+}
+
+.gazette-cover-frame canvas {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+}
+
+.gazette-cover-loading,
+.gazette-cover-error {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--nssa-gray);
+  background: #f5f5f5;
+}
+
+.gazette-cover-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  padding: 8px 12px;
+  background: var(--nssa-gold);
+  border-radius: 999px;
+  color: var(--nssa-blue);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .latest-gazette-copy h2 {
-  margin: 0 0 18px;
-
+  margin: 0 0 12px;
   color: var(--nssa-blue);
-  font-size: 42px;
+  font-size: 44px;
+  line-height: 1.1;
 }
 
-.latest-gazette-copy>p:not(.section-eyebrow) {
-  margin: 0 0 28px;
+.latest-gazette-date {
+  margin: 0 0 20px !important;
+  color: var(--nssa-gold) !important;
+  font-size: 14px !important;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
 
+.latest-gazette-copy>p:not(.section-eyebrow):not(.latest-gazette-date) {
+  margin: 0 0 28px;
   color: var(--nssa-gray);
   font-size: 17px;
   line-height: 1.7;
 }
 
-.gazette-cover-placeholder {
-  min-height: 430px;
-  padding: 35px;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-
-  text-align: center;
-
-  background: var(--nssa-blue);
-  border-radius: 12px;
-
-  color: white;
-}
-
-.gazette-cover-placeholder img {
-  width: 130px;
-  height: auto;
-
-  background: white;
-  padding: 12px;
-  border-radius: 8px;
-}
-
-.gazette-cover-placeholder p {
-  margin: 0 0 8px;
-
-  color: var(--nssa-gold);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 2px;
-}
-
-.gazette-cover-placeholder h3 {
-  margin: 0;
-
-  font-size: 34px;
-}
-
-.gazette-cover-placeholder span {
-  display: block;
-  margin-top: 5px;
-
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 18px;
-}
-
 .archive-heading {
   max-width: 680px;
   margin: 0 auto 45px;
-
   text-align: center;
 }
 
 .archive-heading h2 {
   margin: 0 0 14px;
-
   color: var(--nssa-blue);
   font-size: 40px;
 }
 
 .archive-heading>p:last-child {
   margin: 0;
-
   color: var(--nssa-gray);
   font-size: 17px;
   line-height: 1.6;
 }
 
 .gazette-archive-grid {
-  max-width: 1050px;
+  max-width: 1120px;
   margin: 0 auto;
-
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
 }
 
-.archive-card {
-  padding: 30px;
+.archive-card.gazette-archive-card {
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--nssa-white);
+  border: 1px solid #e8e8e8;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
-  background: white;
-  border: 1px solid #eeeeee;
-  border-radius: 12px;
+.archive-card.gazette-archive-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
+}
+
+.gazette-archive-cover {
+  padding: 22px 22px 0;
+  background: #f3f2ee;
+}
+
+.gazette-archive-cover .gazette-cover-frame {
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.gazette-archive-content {
+  padding: 26px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
 }
 
 .archive-date {
-  margin-bottom: 18px;
-
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .archive-date span {
   color: var(--nssa-gold);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -1058,37 +1114,63 @@ body {
 
 .archive-date strong {
   color: var(--nssa-blue);
+  font-size: 12px;
+  text-transform: uppercase;
 }
 
 .archive-card h3 {
-  margin: 0 0 12px;
-
+  margin: 0 0 10px;
   color: var(--nssa-blue);
-  font-size: 24px;
+  font-size: 23px;
+  line-height: 1.25;
 }
 
-.archive-card>p {
-  margin: 0 0 20px;
-
+.archive-card .gazette-archive-description {
+  margin: 0 0 22px;
   color: var(--nssa-gray);
   line-height: 1.6;
 }
 
+.gazette-archive-content .button {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+@media (max-width: 1000px) {
+  .gazette-archive-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 850px) {
   .latest-gazette {
-    padding: 35px;
-
+    padding: 36px;
     grid-template-columns: 1fr;
+    gap: 40px;
   }
 
-  .gazette-cover-placeholder {
-    max-width: 400px;
-    width: 100%;
-    margin: 0 auto;
+  .latest-gazette-cover {
+    max-width: 360px;
   }
 
+  .latest-gazette-copy {
+    text-align: center;
+  }
+
+  .latest-gazette-copy .button {
+    display: inline-block;
+  }
+}
+
+@media (max-width: 650px) {
   .gazette-archive-grid {
     grid-template-columns: 1fr;
+  }
+
+  .gazette-archive-card {
+    max-width: 430px;
+    width: 100%;
+    margin: 0 auto;
   }
 }
 
@@ -1098,15 +1180,16 @@ body {
   }
 
   .latest-gazette {
-    padding: 25px;
+    margin-bottom: 75px;
+    padding: 24px;
   }
 
   .latest-gazette-copy h2 {
     font-size: 34px;
   }
 
-  .gazette-cover-placeholder {
-    min-height: 350px;
+  .archive-heading h2 {
+    font-size: 34px;
   }
 }
 
