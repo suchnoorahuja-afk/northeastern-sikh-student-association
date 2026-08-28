@@ -83,7 +83,7 @@ function MemberArchive() {
         <h1>Member Archive</h1>
 
         <p>
-          Explore former NSSA members and the students
+          Explore former SSAN members and the students
           who have helped build Sikh community at
           Northeastern over the years.
         </p>
