@@ -301,7 +301,7 @@ function Home() {
 
           {!loadingGazette &&
             !latestGazette && (
-              <>
+              <div className="home-gazette-empty">
                 <p className="gazette-label">
                   SIKH GAZETTE
                 </p>
@@ -314,42 +314,62 @@ function Home() {
                   Check back for the latest
                   Gazette publication.
                 </p>
-              </>
+              </div>
             )}
 
           {!loadingGazette &&
             latestGazette && (
               <>
-                <p className="gazette-label">
-                  LATEST ISSUE
-                </p>
-
-                <h3>
-                  {latestGazette.title}
-                </h3>
-
-                <p className="home-gazette-date">
-                  {formatGazetteDate(
-                    latestGazette.issue_date
-                  )}
-                </p>
-
-                {latestGazette.description && (
-                  <p>
-                    {
-                      latestGazette.description
-                    }
-                  </p>
+                {latestGazette.cover_url && (
+                  <a
+                    href={latestGazette.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="home-gazette-cover-link"
+                    aria-label={`Open ${latestGazette.title}`}
+                  >
+                    <img
+                      src={latestGazette.cover_url}
+                      alt={`${latestGazette.title} cover`}
+                      className="home-gazette-cover"
+                      loading="eager"
+                      fetchPriority="high"
+                    />
+                  </a>
                 )}
 
-                <a
-                  href={latestGazette.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-link"
-                >
-                  Read issue →
-                </a>
+                <div className="home-gazette-info">
+                  <p className="gazette-label">
+                    LATEST ISSUE
+                  </p>
+
+                  <h3>
+                    {latestGazette.title}
+                  </h3>
+
+                  <p className="home-gazette-date">
+                    {formatGazetteDate(
+                      latestGazette.issue_date
+                    )}
+                  </p>
+
+                  {latestGazette.description && (
+                    <p className="home-gazette-description">
+                      {
+                        latestGazette.description
+                      }
+                    </p>
+                  )}
+
+                  <a
+                    href={latestGazette.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-link"
+                  >
+                    Read issue →
+                  </a>
+                </div>
               </>
             )}
         </div>
