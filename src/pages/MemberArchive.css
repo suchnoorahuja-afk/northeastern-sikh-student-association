@@ -1,0 +1,256 @@
+.member-archive-section {
+    padding: 72px 24px 100px;
+    background: #faf9f6;
+}
+
+.member-archive-container {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.member-archive-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+
+    margin-bottom: 54px;
+}
+
+.member-search-wrapper {
+    width: 100%;
+    max-width: 520px;
+}
+
+.member-archive-search {
+    width: 100%;
+    padding: 15px 18px;
+
+    border: 1px solid #d9d9d9;
+    border-radius: 10px;
+
+    background: white;
+    color: #171717;
+
+    font: inherit;
+    font-size: 15px;
+}
+
+.member-archive-search:focus {
+    outline: 2px solid #2c20a5;
+    outline-offset: 1px;
+    border-color: #2c20a5;
+}
+
+.member-archive-count {
+    flex-shrink: 0;
+
+    margin: 0;
+
+    color: #626262;
+    font-size: 14px;
+}
+
+.member-year-section {
+    margin-bottom: 64px;
+}
+
+.member-year-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+
+    margin-bottom: 18px;
+}
+
+.member-year-eyebrow {
+    margin: 0 0 7px;
+
+    color: #d89f00;
+
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+}
+
+.member-year-heading h2 {
+    margin: 0;
+
+    color: #2c20a5;
+
+    font-size: 32px;
+    line-height: 1.1;
+}
+
+.member-year-heading>span {
+    margin-bottom: 4px;
+
+    color: #626262;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.member-list {
+    width: 100%;
+
+    border-top: 2px solid #2c20a5;
+    border-bottom: 1px solid #dddddd;
+
+    background: white;
+}
+
+.member-list-header,
+.member-list-row {
+    display: grid;
+    grid-template-columns:
+        minmax(180px, 1.3fr) minmax(220px, 1.6fr) minmax(120px, 0.8fr) minmax(220px, 1.3fr);
+
+    gap: 28px;
+
+    align-items: center;
+}
+
+.member-list-header {
+    padding: 13px 20px;
+
+    background: #f2f0eb;
+
+    color: #626262;
+
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.member-list-row {
+    min-height: 82px;
+    padding: 18px 20px;
+
+    border-top: 1px solid #e8e8e8;
+
+    transition: background 0.18s ease;
+}
+
+.member-list-row:hover {
+    background: #faf9f6;
+}
+
+.member-list-name strong {
+    color: #2c20a5;
+
+    font-size: 18px;
+    line-height: 1.3;
+}
+
+.member-list-role,
+.member-list-years {
+    color: #4f4f4f;
+
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.member-list-role {
+    font-weight: 600;
+}
+
+.member-list-contact {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+
+    font-size: 14px;
+}
+
+.member-list-contact a {
+    color: #2c20a5;
+
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.member-list-contact a:hover {
+    color: #d89f00;
+}
+
+.member-list-contact span {
+    color: #626262;
+
+    line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+    .member-list-header {
+        display: none;
+    }
+
+    .member-list-row {
+        grid-template-columns: 1fr 1fr;
+
+        gap: 16px 24px;
+
+        padding: 22px;
+    }
+
+    .member-list-name {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 650px) {
+    .member-archive-section {
+        padding: 55px 20px 80px;
+    }
+
+    .member-archive-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+
+        margin-bottom: 42px;
+    }
+
+    .member-search-wrapper {
+        max-width: none;
+    }
+
+    .member-year-heading {
+        align-items: flex-start;
+        flex-direction: column;
+
+        gap: 8px;
+    }
+
+    .member-year-heading>span {
+        margin-bottom: 0;
+    }
+
+    .member-list-row {
+        grid-template-columns: 1fr;
+
+        gap: 9px;
+
+        padding: 22px 18px;
+    }
+
+    .member-list-name {
+        grid-column: auto;
+    }
+
+    .member-list-role::before {
+        content: 'Role: ';
+
+        color: #888888;
+        font-weight: 500;
+    }
+
+    .member-list-years::before {
+        content: 'Years Active: ';
+
+        color: #888888;
+    }
+}

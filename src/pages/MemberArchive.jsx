@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getMemberArchive } from '../lib/memberArchive'
+import './MemberArchive.css'
 
 function MemberArchive() {
   const [members, setMembers] = useState([])
@@ -89,125 +90,140 @@ function MemberArchive() {
         </p>
       </section>
 
-      <section className="archive-section">
-        <div className="archive-toolbar">
-          <input
-            type="search"
-            className="archive-search"
-            placeholder="Search by name, role, year..."
-            value={search}
-            onChange={(event) =>
-              setSearch(event.target.value)
-            }
-          />
+      <section className="member-archive-section">
+        <div className="member-archive-container">
+          <div className="member-archive-toolbar">
+            <div className="member-search-wrapper">
+              <input
+                type="search"
+                className="member-archive-search"
+                placeholder="Search by name, role, year..."
+                value={search}
+                onChange={(event) =>
+                  setSearch(event.target.value)
+                }
+              />
+            </div>
 
-          <p>
-            {filteredMembers.length} member
-            {filteredMembers.length !== 1 ? 's' : ''}
-          </p>
-        </div>
+            <p className="member-archive-count">
+              {filteredMembers.length} member
+              {filteredMembers.length !== 1 ? 's' : ''}
+            </p>
+          </div>
 
-        {loading && (
-          <p className="schedule-status">
-            Loading member archive...
-          </p>
-        )}
-
-        {error && (
-          <p className="schedule-status schedule-error">
-            {error}
-          </p>
-        )}
-
-        {!loading &&
-          !error &&
-          filteredMembers.length === 0 && (
+          {loading && (
             <p className="schedule-status">
-              No members found.
+              Loading member archive...
             </p>
           )}
 
-        {!loading &&
-          !error &&
-          groupedMembers.map(
-            ([year, yearMembers]) => (
-              <div
-                className="archive-year-section"
-                key={year}
-              >
-                <div className="archive-year-heading">
-                  <p className="section-eyebrow">
-                    MEMBER ARCHIVE
-                  </p>
-
-                  <h2>
-                    {year === 'Other'
-                      ? 'Former Members'
-                      : `Class of ${year}`}
-                  </h2>
-
-                  <span>
-                    {yearMembers.length} member
-                    {yearMembers.length !== 1
-                      ? 's'
-                      : ''}
-                  </span>
-                </div>
-
-                <div className="archive-grid">
-                  {yearMembers.map((member) => (
-                    <article
-                      className="archive-card"
-                      key={member.id}
-                    >
-                      <div className="archive-card-header">
-                        <div>
-                          <p className="archive-role">
-                            {member.role ||
-                              'Former Member'}
-                          </p>
-
-                          <h3>{member.name}</h3>
-                        </div>
-                      </div>
-
-                      {member.years_active && (
-                        <p className="archive-years">
-                          NSSA: {member.years_active}
-                        </p>
-                      )}
-
-                      <div className="archive-contact">
-                        {member.email && (
-                          <a
-                            href={`mailto:${member.email}`}
-                          >
-                            {member.email}
-                          </a>
-                        )}
-
-                        {member.linkedin && (
-                          <a
-                            href={member.linkedin}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            LinkedIn
-                          </a>
-                        )}
-
-                        {member.contact_info && (
-                          <p>
-                            {member.contact_info}
-                          </p>
-                        )}
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            )
+          {error && (
+            <p className="schedule-status schedule-error">
+              {error}
+            </p>
           )}
+
+          {!loading &&
+            !error &&
+            filteredMembers.length === 0 && (
+              <p className="schedule-status">
+                No members found.
+              </p>
+            )}
+
+          {!loading &&
+            !error &&
+            groupedMembers.map(
+              ([year, yearMembers]) => (
+                <section
+                  className="member-year-section"
+                  key={year}
+                >
+                  <div className="member-year-heading">
+                    <div>
+                      <p className="member-year-eyebrow">
+                        MEMBER ARCHIVE
+                      </p>
+
+                      <h2>
+                        {year === 'Other'
+                          ? 'Former Members'
+                          : `Class of ${year}`}
+                      </h2>
+                    </div>
+
+                    <span>
+                      {yearMembers.length} member
+                      {yearMembers.length !== 1
+                        ? 's'
+                        : ''}
+                    </span>
+                  </div>
+
+                  <div className="member-list">
+                    <div className="member-list-header">
+                      <span>Name</span>
+                      <span>Role</span>
+                      <span>Years Active</span>
+                      <span>Contact</span>
+                    </div>
+
+                    {yearMembers.map((member) => (
+                      <article
+                        className="member-list-row"
+                        key={member.id}
+                      >
+                        <div className="member-list-name">
+                          <strong>{member.name}</strong>
+                        </div>
+
+                        <div className="member-list-role">
+                          {member.role ||
+                            'Former Member'}
+                        </div>
+
+                        <div className="member-list-years">
+                          {member.years_active || '—'}
+                        </div>
+
+                        <div className="member-list-contact">
+                          {member.email && (
+                            <a
+                              href={`mailto:${member.email}`}
+                            >
+                              Email
+                            </a>
+                          )}
+
+                          {member.linkedin && (
+                            <a
+                              href={member.linkedin}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              LinkedIn
+                            </a>
+                          )}
+
+                          {member.contact_info && (
+                            <span>
+                              {member.contact_info}
+                            </span>
+                          )}
+
+                          {!member.email &&
+                            !member.linkedin &&
+                            !member.contact_info && (
+                              <span>—</span>
+                            )}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )
+            )}
+        </div>
       </section>
     </main>
   )
