@@ -6,6 +6,7 @@ import GazetteAdmin from './admin/GazetteAdmin'
 import EBoardAdmin from './admin/EBoardAdmin'
 import MemberArchiveAdmin from './admin/MemberArchiveAdmin'
 import InvolvementAdmin from './admin/InvolvementAdmin'
+import GalleryAdmin from './admin/GalleryAdmin'
 
 function Admin() {
     const [email, setEmail] = useState('')
@@ -23,6 +24,7 @@ function Admin() {
     const [archiveCount, setArchiveCount] = useState(0)
     const [involvementCount, setInvolvementCount] =
         useState(0)
+    const [galleryCount, setGalleryCount] = useState(0)
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data }) => {
@@ -56,6 +58,7 @@ function Admin() {
             eboardResult,
             archiveResult,
             involvementResult,
+            galleryResult,
         ] = await Promise.all([
             supabase
                 .from('events')
@@ -91,6 +94,13 @@ function Admin() {
                     count: 'exact',
                     head: true,
                 }),
+
+            supabase
+                .from('gallery_photos')
+                .select('*', {
+                    count: 'exact',
+                    head: true,
+                }),
         ])
 
         setEventCount(eventsResult.count || 0)
@@ -100,6 +110,7 @@ function Admin() {
         setInvolvementCount(
             involvementResult.count || 0
         )
+        setGalleryCount(galleryResult.count || 0)
     }
 
     async function handleLogin(event) {
@@ -145,17 +156,17 @@ function Admin() {
                 <div className="admin-login-card">
                     <img
                         src="/nssa-logo.png"
-                        alt="NSSA Logo"
+                        alt="SSAN Logo"
                     />
 
                     <p className="section-eyebrow">
-                        NSSA ADMIN
+                        SSAN ADMIN
                     </p>
 
                     <h1>Admin Login</h1>
 
                     <p className="admin-description">
-                        Sign in to manage NSSA website content.
+                        Sign in to manage SSAN website content.
                     </p>
 
                     <form
@@ -214,7 +225,7 @@ function Admin() {
                 <div className="admin-dashboard-header">
                     <div>
                         <p className="section-eyebrow">
-                            NSSA ADMIN
+                            SSAN ADMIN
                         </p>
 
                         <h1>Website Dashboard</h1>
@@ -327,6 +338,24 @@ function Admin() {
                                 : 'ies'}
                         </span>
                     </button>
+
+                    <button
+                        type="button"
+                        className="admin-summary-card"
+                        onClick={() =>
+                            setActiveSection('gallery')
+                        }
+                    >
+                        <span className="admin-summary-label">
+                            PHOTO GALLERY
+                        </span>
+
+                        <strong>{galleryCount}</strong>
+
+                        <span>
+                            Photo{galleryCount !== 1 ? 's' : ''} Live
+                        </span>
+                    </button>
                 </div>
 
                 <div className="admin-tabs">
@@ -399,26 +428,56 @@ function Admin() {
                     >
                         Get Involved
                     </button>
+
+                    <button
+                        type="button"
+                        className={
+                            activeSection === 'gallery'
+                                ? 'admin-tab active'
+                                : 'admin-tab'
+                        }
+                        onClick={() =>
+                            setActiveSection('gallery')
+                        }
+                    >
+                        Photo Gallery
+                    </button>
                 </div>
 
                 {activeSection === 'schedule' && (
-                    <ScheduleAdmin />
+                    <ScheduleAdmin
+                        onContentChange={loadDashboardCounts}
+                    />
                 )}
 
                 {activeSection === 'gazette' && (
-                    <GazetteAdmin />
+                    <GazetteAdmin
+                        onContentChange={loadDashboardCounts}
+                    />
                 )}
 
                 {activeSection === 'eboard' && (
-                    <EBoardAdmin />
+                    <EBoardAdmin
+                        onContentChange={loadDashboardCounts}
+                    />
                 )}
 
                 {activeSection === 'archive' && (
-                    <MemberArchiveAdmin />
+                    <MemberArchiveAdmin
+                        onContentChange={loadDashboardCounts}
+                    />
                 )}
 
                 {activeSection === 'involvement' && (
-                    <InvolvementAdmin />
+                    <InvolvementAdmin
+                        onContentChange={loadDashboardCounts}
+                    />
+                )}
+
+                {activeSection === 'gallery' && (
+                    <GalleryAdmin
+                        onContentChange={loadDashboardCounts}
+                    />
                 )}
             </div>
         </main>

@@ -14,6 +14,7 @@ import Schedule from './pages/Schedule'
 import EBoard from './pages/EBoard'
 import Gazette from './pages/Gazette'
 import MemberArchive from './pages/MemberArchive'
+import Gallery from './pages/Gallery'
 import Applications from './pages/Applications'
 import About from './pages/About'
 import Admin from './pages/Admin'
@@ -33,7 +34,7 @@ function SiteLayout() {
           <Link
             to="/"
             className="nav-logo"
-            aria-label="NSSA Home"
+            aria-label="SSAN Home"
           >
             <img
               src="/nssa-logo.png"
@@ -71,6 +72,7 @@ function SiteLayout() {
             <Link to="/eboard">E-Board</Link>
             <Link to="/gazette">Sikh Gazette</Link>
             <Link to="/archive">Member Archive</Link>
+            <Link to="/gallery">Photo Gallery</Link>
             <Link to="/applications">Get Involved</Link>
             <Link to="/about">About</Link>
           </div>
@@ -79,30 +81,42 @@ function SiteLayout() {
 
       <Routes>
         <Route path="/" element={<Home />} />
+
         <Route
           path="/schedule"
           element={<Schedule />}
         />
+
         <Route
           path="/eboard"
           element={<EBoard />}
         />
+
         <Route
           path="/gazette"
           element={<Gazette />}
         />
+
         <Route
           path="/archive"
           element={<MemberArchive />}
         />
+
+        <Route
+          path="/gallery"
+          element={<Gallery />}
+        />
+
         <Route
           path="/applications"
           element={<Applications />}
         />
+
         <Route
           path="/about"
           element={<About />}
         />
+
         <Route
           path="/admin"
           element={<Admin />}
@@ -114,7 +128,7 @@ function SiteLayout() {
           <div className="footer-brand">
             <img
               src="/nssa-logo.png"
-              alt="NSSA Logo"
+              alt="SSAN Logo"
             />
 
             <div>
@@ -143,6 +157,10 @@ function SiteLayout() {
 
             <Link to="/archive">
               Member Archive
+            </Link>
+
+            <Link to="/gallery">
+              Photo Gallery
             </Link>
 
             <Link to="/about">
