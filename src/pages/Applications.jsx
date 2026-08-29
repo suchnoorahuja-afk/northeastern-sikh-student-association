@@ -1,172 +1,322 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+
 import { supabase } from '../lib/supabase'
+import './Applications.css'
+
+function formatStatus(status) {
+  if (status === 'coming-soon') {
+    return 'Coming Soon'
+  }
+
+  if (status === 'closed') {
+    return 'Closed'
+  }
+
+  return 'Open'
+}
 
 function Applications() {
-    const [opportunities, setOpportunities] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
+  const [opportunities, setOpportunities] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-    useEffect(() => {
-        async function loadOpportunities() {
-            try {
-                const { data, error } = await supabase
-                    .from('involvement_opportunities')
-                    .select('*')
-                    .order('display_order', { ascending: true })
-                    .order('id', { ascending: true })
+  useEffect(() => {
+    async function loadOpportunities() {
+      try {
+        const { data, error: loadError } =
+          await supabase
+            .from('involvement_opportunities')
+            .select('*')
+            .order('display_order', {
+              ascending: true,
+            })
+            .order('id', {
+              ascending: true,
+            })
 
-                if (error) {
-                    throw error
-                }
-
-                setOpportunities(data || [])
-            } catch (error) {
-                console.error(error)
-                setError(
-                    'Unable to load Get Involved opportunities right now.'
-                )
-            } finally {
-                setLoading(false)
-            }
+        if (loadError) {
+          throw loadError
         }
 
-        loadOpportunities()
-    }, [])
+        setOpportunities(data || [])
+      } catch (loadError) {
+        console.error(loadError)
 
-    function formatStatus(status) {
-        if (status === 'coming-soon') {
-            return 'Coming Soon'
-        }
-
-        if (status === 'closed') {
-            return 'Closed'
-        }
-
-        return 'Open'
+        setError(
+          'Could not load current opportunities.'
+        )
+      } finally {
+        setLoading(false)
+      }
     }
 
-    return (
-        <main className="inner-page">
-            <section className="page-hero">
-                <p className="section-eyebrow">
-                    GET INVOLVED
+    loadOpportunities()
+  }, [])
+
+  return (
+    <main className="involvement-page">
+      <section className="involvement-hero">
+        <div className="involvement-hero-content">
+          <p className="involvement-eyebrow">
+            GET INVOLVED
+          </p>
+
+          <h1>Find your place in SSAN</h1>
+
+          <p>
+            Explore leadership opportunities,
+            applications, service, events, and other
+            ways to take part in the Sikh community at
+            Northeastern.
+          </p>
+
+          <div className="involvement-hero-buttons">
+            <a
+              href="#opportunities"
+              className="involvement-gold-button"
+            >
+              View Opportunities
+            </a>
+
+            <Link
+              to="/schedule"
+              className="involvement-hero-outline"
+            >
+              Upcoming Events
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="involvement-opportunities-section"
+        id="opportunities"
+      >
+        <div className="involvement-container">
+          <div className="involvement-section-heading">
+            <p className="involvement-eyebrow">
+              CURRENT OPPORTUNITIES
+            </p>
+
+            <h2>Ways to get involved</h2>
+
+            <p>
+              See what is currently open and find an
+              opportunity that fits how you want to
+              contribute.
+            </p>
+          </div>
+
+          {loading && (
+            <div className="involvement-state">
+              Loading opportunities...
+            </div>
+          )}
+
+          {!loading && error && (
+            <div className="involvement-state involvement-error">
+              {error}
+            </div>
+          )}
+
+          {!loading &&
+            !error &&
+            opportunities.length === 0 && (
+              <div className="involvement-empty">
+                <p className="involvement-eyebrow">
+                  CHECK BACK SOON
                 </p>
 
-                <h1>Join NSSA</h1>
+                <h3>
+                  No opportunities are open right now.
+                </h3>
 
                 <p>
-                    Explore current applications, sign-ups,
-                    leadership opportunities, and other ways to
-                    get involved with the Northeastern Sikh
-                    Student Association.
+                  Follow SSAN on Instagram or check
+                  back later for new applications and
+                  sign-ups.
                 </p>
-            </section>
+              </div>
+            )}
 
-            <section className="involvement-section">
-                {loading && (
-                    <p className="schedule-status">
-                        Loading opportunities...
-                    </p>
-                )}
+          {!loading &&
+            !error &&
+            opportunities.length > 0 && (
+              <div className="involvement-feature-list">
+                {opportunities.map(
+                  (opportunity) => {
+                    const status =
+                      opportunity.status || 'open'
 
-                {error && (
-                    <p className="schedule-status schedule-error">
-                        {error}
-                    </p>
-                )}
+                    return (
+                      <article
+                        className="involvement-feature"
+                        key={opportunity.id}
+                      >
+                        <div className="involvement-feature-accent" />
 
-                {!loading &&
-                    !error &&
-                    opportunities.length === 0 && (
-                        <div className="involvement-empty">
-                            <p className="section-eyebrow">
-                                CURRENT OPPORTUNITIES
-                            </p>
+                        <div className="involvement-feature-main">
+                          <div className="involvement-feature-copy">
+                            <div className="involvement-feature-meta">
+                              {opportunity.category && (
+                                <span className="involvement-category">
+                                  {
+                                    opportunity.category
+                                  }
+                                </span>
+                              )}
 
-                            <h2>Nothing open right now</h2>
+                              <span
+                                className={`involvement-status involvement-status-${status}`}
+                              >
+                                {formatStatus(
+                                  status
+                                )}
+                              </span>
+                            </div>
 
-                            <p>
-                                Check back soon for future applications,
-                                sign-ups, and ways to get involved with
-                                NSSA.
-                            </p>
-                        </div>
-                    )}
+                            <h3>
+                              {opportunity.title}
+                            </h3>
 
-                {!loading &&
-                    !error &&
-                    opportunities.length > 0 && (
-                        <div className="involvement-grid">
-                            {opportunities.map((opportunity) => (
-                                <article
-                                    className="involvement-card"
-                                    key={opportunity.id}
+                            {opportunity.description && (
+                              <p>
+                                {
+                                  opportunity.description
+                                }
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="involvement-feature-action">
+                            {status === 'open' &&
+                              opportunity.link && (
+                                <a
+                                  href={
+                                    opportunity.link
+                                  }
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="involvement-primary-button"
                                 >
-                                    <div className="involvement-card-top">
-                                        <div>
-                                            <p className="involvement-category">
-                                                {opportunity.category ||
-                                                    'OPPORTUNITY'}
-                                            </p>
+                                  Apply / Sign Up
+                                </a>
+                              )}
 
-                                            <h2>{opportunity.title}</h2>
-                                        </div>
+                            {status === 'open' &&
+                              !opportunity.link && (
+                                <span className="involvement-unavailable">
+                                  Details coming soon
+                                </span>
+                              )}
 
-                                        <span
-                                            className={`involvement-status involvement-status-${opportunity.status}`}
-                                        >
-                                            {formatStatus(
-                                                opportunity.status
-                                            )}
-                                        </span>
-                                    </div>
+                            {status ===
+                              'coming-soon' && (
+                              <span className="involvement-unavailable">
+                                Link coming soon
+                              </span>
+                            )}
 
-                                    {opportunity.description && (
-                                        <p className="involvement-description">
-                                            {opportunity.description}
-                                        </p>
-                                    )}
-
-                                    <div className="involvement-card-footer">
-                                        {opportunity.status === 'open' &&
-                                            opportunity.link && (
-                                                <a
-                                                    href={opportunity.link}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="button button-blue"
-                                                >
-                                                    Apply / Sign Up
-                                                </a>
-                                            )}
-
-                                        {opportunity.status ===
-                                            'coming-soon' && (
-                                                <span className="involvement-unavailable">
-                                                    Link coming soon
-                                                </span>
-                                            )}
-
-                                        {opportunity.status === 'closed' && (
-                                            <span className="involvement-unavailable">
-                                                This opportunity is closed
-                                            </span>
-                                        )}
-
-                                        {opportunity.status === 'open' &&
-                                            !opportunity.link && (
-                                                <span className="involvement-unavailable">
-                                                    Details coming soon
-                                                </span>
-                                            )}
-                                    </div>
-                                </article>
-                            ))}
+                            {status === 'closed' && (
+                              <span className="involvement-unavailable">
+                                This opportunity is
+                                closed
+                              </span>
+                            )}
+                          </div>
                         </div>
-                    )}
-            </section>
-        </main>
-    )
+                      </article>
+                    )
+                  }
+                )}
+              </div>
+            )}
+        </div>
+      </section>
+
+      <section className="involvement-more-section">
+        <div className="involvement-container">
+          <div className="involvement-section-heading involvement-more-heading">
+            <p className="involvement-eyebrow">
+              MORE WAYS TO CONNECT
+            </p>
+
+            <h2>
+              You do not need a position to be part of
+              the community.
+            </h2>
+          </div>
+
+          <div className="involvement-path-grid">
+            <Link
+              to="/schedule"
+              className="involvement-path"
+            >
+              <span>01</span>
+
+              <h3>Attend an Event</h3>
+
+              <p>
+                Join community gatherings, seva,
+                discussions, and social events.
+              </p>
+
+              <strong>View Schedule →</strong>
+            </Link>
+
+            <a
+              href="https://www.instagram.com/nssaboston/"
+              target="_blank"
+              rel="noreferrer"
+              className="involvement-path"
+            >
+              <span>02</span>
+
+              <h3>Follow SSAN</h3>
+
+              <p>
+                Keep up with announcements, events,
+                applications, and community updates.
+              </p>
+
+              <strong>Instagram →</strong>
+            </a>
+
+            <div className="involvement-path">
+              <span>03</span>
+
+              <h3>Join the Mailing List</h3>
+
+              <p>
+                Get SSAN announcements, upcoming
+                events, opportunities, and community
+                updates delivered directly to you.
+              </p>
+
+              <strong>Coming Soon</strong>
+            </div>
+
+            <Link
+              to="/eboard"
+              className="involvement-path"
+            >
+              <span>04</span>
+
+              <h3>Meet the E-Board</h3>
+
+              <p>
+                Learn more about the students helping
+                lead SSAN.
+              </p>
+
+              <strong>Meet the Team →</strong>
+            </Link>
+          </div>
+        </div>
+      </section>
+    </main>
+  )
 }
 
 export default Applications
