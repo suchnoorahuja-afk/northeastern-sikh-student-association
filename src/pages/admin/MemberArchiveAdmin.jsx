@@ -3,11 +3,20 @@ import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
 
 function MemberArchiveAdmin() {
-    const [previewMembers, setPreviewMembers] = useState([])
-    const [liveMembers, setLiveMembers] = useState([])
-    const [fileName, setFileName] = useState('')
-    const [message, setMessage] = useState('')
-    const [publishing, setPublishing] = useState(false)
+    const [previewMembers, setPreviewMembers] =
+        useState([])
+
+    const [liveMembers, setLiveMembers] =
+        useState([])
+
+    const [fileName, setFileName] =
+        useState('')
+
+    const [message, setMessage] =
+        useState('')
+
+    const [publishing, setPublishing] =
+        useState(false)
 
     useEffect(() => {
         loadLiveMembers()
@@ -17,14 +26,20 @@ function MemberArchiveAdmin() {
         const { data, error } = await supabase
             .from('member_archive')
             .select('*')
-            .order('graduation_year', { ascending: false })
-            .order('display_order', { ascending: true })
+            .order('graduation_year', {
+                ascending: false,
+            })
+            .order('display_order', {
+                ascending: true,
+            })
 
         if (error) {
             console.error(error)
+
             setMessage(
                 `Could not load member archive: ${error.message}`
             )
+
             return
         }
 
@@ -32,47 +47,23 @@ function MemberArchiveAdmin() {
     }
 
     function downloadTemplate() {
-        const templateData = [
-            {
-                Name: 'Example Member',
-                Role: 'President',
-                'Graduation Year': 2026,
-                'Years Active': '2024-2026',
-                Email: 'member@example.com',
-                LinkedIn: 'https://www.linkedin.com/in/example',
-                'Contact Info': '',
-            },
-        ]
+        const link =
+            document.createElement('a')
 
-        const worksheet =
-            XLSX.utils.json_to_sheet(templateData)
+        link.href =
+            '/SSAN-Member-Archive-Template.xlsx'
 
-        worksheet['!cols'] = [
-            { wch: 24 },
-            { wch: 36 },
-            { wch: 18 },
-            { wch: 18 },
-            { wch: 30 },
-            { wch: 45 },
-            { wch: 30 },
-        ]
+        link.download =
+            'SSAN-Member-Archive-Template.xlsx'
 
-        const workbook = XLSX.utils.book_new()
-
-        XLSX.utils.book_append_sheet(
-            workbook,
-            worksheet,
-            'Member Archive'
-        )
-
-        XLSX.writeFile(
-            workbook,
-            'NSSA-Member-Archive-Template.xlsx'
-        )
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
     }
 
     async function handleFileChange(event) {
-        const file = event.target.files?.[0]
+        const file =
+            event.target.files?.[0]
 
         setMessage('')
         setPreviewMembers([])
@@ -83,13 +74,28 @@ function MemberArchiveAdmin() {
         }
 
         try {
-            const buffer = await file.arrayBuffer()
+            const buffer =
+                await file.arrayBuffer()
 
-            const workbook = XLSX.read(buffer, {
-                type: 'array',
-            })
+            const workbook = XLSX.read(
+                buffer,
+                {
+                    type: 'array',
+                }
+            )
 
-            const firstSheetName = workbook.SheetNames[0]
+            /*
+             * We specifically use the first sheet.
+             *
+             * In the SSAN template:
+             * Sheet 1 = Member Archive
+             * Sheet 2 = Roles
+             *
+             * The Roles sheet exists only to power
+             * Excel's Role dropdown.
+             */
+            const firstSheetName =
+                workbook.SheetNames[0]
 
             if (!firstSheetName) {
                 throw new Error(
@@ -98,14 +104,17 @@ function MemberArchiveAdmin() {
             }
 
             const worksheet =
-                workbook.Sheets[firstSheetName]
+                workbook.Sheets[
+                firstSheetName
+                ]
 
-            const rows = XLSX.utils.sheet_to_json(
-                worksheet,
-                {
-                    defval: '',
-                }
-            )
+            const rows =
+                XLSX.utils.sheet_to_json(
+                    worksheet,
+                    {
+                        defval: '',
+                    }
+                )
 
             if (rows.length === 0) {
                 throw new Error(
@@ -113,78 +122,107 @@ function MemberArchiveAdmin() {
                 )
             }
 
-            const formattedMembers = rows
-                .map((row, index) => {
-                    const name = String(
-                        row.Name || row.name || ''
-                    ).trim()
+            const formattedMembers =
+                rows
+                    .map((row, index) => {
+                        const name = String(
+                            row.Name ||
+                            row.name ||
+                            ''
+                        ).trim()
 
-                    const role = String(
-                        row.Role || row.role || ''
-                    ).trim()
+                        const role = String(
+                            row.Role ||
+                            row.role ||
+                            ''
+                        ).trim()
 
-                    const graduationYearValue =
-                        row['Graduation Year'] ??
-                        row.graduation_year ??
-                        ''
+                        const graduationYearValue =
+                            row['Graduation Year'] ??
+                            row.graduation_year ??
+                            ''
 
-                    const graduationYear =
-                        graduationYearValue === ''
-                            ? ''
-                            : String(
-                                graduationYearValue
+                        const graduationYear =
+                            graduationYearValue === ''
+                                ? ''
+                                : String(
+                                    graduationYearValue
+                                ).trim()
+
+                        const phoneNumber =
+                            String(
+                                row['Phone Number'] ||
+                                row.Phone ||
+                                row.phone ||
+                                row.phone_number ||
+                                ''
                             ).trim()
 
-                    const yearsActive = String(
-                        row['Years Active'] ||
-                        row.years_active ||
-                        ''
-                    ).trim()
+                        const email = String(
+                            row.Email ||
+                            row.email ||
+                            ''
+                        ).trim()
 
-                    const email = String(
-                        row.Email || row.email || ''
-                    ).trim()
+                        const linkedin =
+                            String(
+                                row.LinkedIn ||
+                                row.Linkedin ||
+                                row.linkedin ||
+                                ''
+                            ).trim()
 
-                    const linkedin = String(
-                        row.LinkedIn ||
-                        row.Linkedin ||
-                        row.linkedin ||
-                        ''
-                    ).trim()
+                        return {
+                            name,
+                            role,
 
-                    const contactInfo = String(
-                        row['Contact Info'] ||
-                        row.contact_info ||
-                        ''
-                    ).trim()
+                            graduation_year:
+                                graduationYear,
 
-                    return {
-                        name,
-                        role,
-                        graduation_year:
-                            graduationYear,
-                        years_active: yearsActive,
-                        email,
-                        linkedin,
-                        contact_info: contactInfo,
-                        display_order: index,
-                    }
-                })
-                .filter((member) => member.name)
+                            /*
+                             * Existing database schema
+                             * still contains years_active.
+                             * The new template no longer
+                             * uses that field.
+                             */
+                            years_active: '',
 
-            if (formattedMembers.length === 0) {
+                            email,
+                            linkedin,
+
+                            /*
+                             * We store Phone Number in
+                             * contact_info so we do not
+                             * need a database migration.
+                             */
+                            contact_info:
+                                phoneNumber,
+
+                            display_order:
+                                index,
+                        }
+                    })
+                    .filter(
+                        (member) =>
+                            member.name
+                    )
+
+            if (
+                formattedMembers.length === 0
+            ) {
                 throw new Error(
                     'No valid members were found. Make sure the spreadsheet has a Name column.'
                 )
             }
 
-            const invalidYear = formattedMembers.find(
-                (member) =>
-                    member.graduation_year &&
-                    !/^\d{4}$/.test(
-                        member.graduation_year
-                    )
-            )
+            const invalidYear =
+                formattedMembers.find(
+                    (member) =>
+                        member.graduation_year &&
+                        !/^\d{4}$/.test(
+                            member.graduation_year
+                        )
+                )
 
             if (invalidYear) {
                 throw new Error(
@@ -192,7 +230,10 @@ function MemberArchiveAdmin() {
                 )
             }
 
-            setPreviewMembers(formattedMembers)
+            setPreviewMembers(
+                formattedMembers
+            )
+
             setFileName(file.name)
 
             setMessage(
@@ -211,31 +252,40 @@ function MemberArchiveAdmin() {
     }
 
     async function publishArchive() {
-        if (previewMembers.length === 0) {
+        if (
+            previewMembers.length === 0
+        ) {
             setMessage(
                 'Upload an Excel file before publishing.'
             )
+
             return
         }
 
-        const confirmed = window.confirm(
-            `Publish ${previewMembers.length} members? This will replace the entire currently published member archive.`
-        )
+        const confirmed =
+            window.confirm(
+                `Publish ${previewMembers.length} members? This will replace the entire currently published member archive.`
+            )
 
         if (!confirmed) {
             return
         }
 
         setPublishing(true)
-        setMessage('Publishing member archive...')
+
+        setMessage(
+            'Publishing member archive...'
+        )
 
         try {
-            const { error } = await supabase.rpc(
-                'replace_member_archive',
-                {
-                    members: previewMembers,
-                }
-            )
+            const { error } =
+                await supabase.rpc(
+                    'replace_member_archive',
+                    {
+                        members:
+                            previewMembers,
+                    }
+                )
 
             if (error) {
                 throw error
@@ -250,9 +300,10 @@ function MemberArchiveAdmin() {
                 'Member archive published successfully.'
             )
 
-            const input = document.getElementById(
-                'member-archive-file'
-            )
+            const input =
+                document.getElementById(
+                    'member-archive-file'
+                )
 
             if (input) {
                 input.value = ''
@@ -276,11 +327,14 @@ function MemberArchiveAdmin() {
                         MEMBER ARCHIVE
                     </p>
 
-                    <h2>Manage Former Members</h2>
+                    <h2>
+                        Manage Former Members
+                    </h2>
 
                     <p>
-                        Upload an Excel spreadsheet to replace
-                        the public NSSA member archive.
+                        Upload an Excel spreadsheet
+                        to replace the public SSAN
+                        member archive.
                     </p>
                 </div>
 
@@ -294,23 +348,31 @@ function MemberArchiveAdmin() {
             </div>
 
             <div className="admin-upload-card">
-                <h3>Upload Member Archive</h3>
+                <h3>
+                    Upload Member Archive
+                </h3>
 
                 <p>
-                    Upload an Excel file using the NSSA
-                    member archive template.
+                    Upload an Excel file using
+                    the SSAN member archive
+                    template.
                 </p>
 
                 <input
                     id="member-archive-file"
                     type="file"
                     accept=".xlsx,.xls"
-                    onChange={handleFileChange}
+                    onChange={
+                        handleFileChange
+                    }
                 />
 
                 {fileName && (
                     <p>
-                        Selected file: <strong>{fileName}</strong>
+                        Selected file:{' '}
+                        <strong>
+                            {fileName}
+                        </strong>
                     </p>
                 )}
 
@@ -321,87 +383,108 @@ function MemberArchiveAdmin() {
                 )}
             </div>
 
-            {previewMembers.length > 0 && (
-                <div className="admin-preview-card">
-                    <div className="admin-preview-header">
-                        <div>
-                            <p className="section-eyebrow">
-                                PREVIEW
-                            </p>
+            {previewMembers.length >
+                0 && (
+                    <div className="admin-preview-card">
+                        <div className="admin-preview-header">
+                            <div>
+                                <p className="section-eyebrow">
+                                    PREVIEW
+                                </p>
 
-                            <h3>
-                                {previewMembers.length}{' '}
-                                Member
-                                {previewMembers.length === 1
-                                    ? ''
-                                    : 's'}
-                            </h3>
+                                <h3>
+                                    {
+                                        previewMembers.length
+                                    }{' '}
+                                    Member
+                                    {previewMembers.length ===
+                                        1
+                                        ? ''
+                                        : 's'}
+                                </h3>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="button button-blue"
+                                onClick={
+                                    publishArchive
+                                }
+                                disabled={
+                                    publishing
+                                }
+                            >
+                                {publishing
+                                    ? 'Publishing...'
+                                    : 'Publish Member Archive'}
+                            </button>
                         </div>
 
-                        <button
-                            type="button"
-                            className="button button-blue"
-                            onClick={publishArchive}
-                            disabled={publishing}
-                        >
-                            {publishing
-                                ? 'Publishing...'
-                                : 'Publish Member Archive'}
-                        </button>
-                    </div>
+                        <div className="admin-table-wrap">
+                            <table className="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Role</th>
+                                        <th>Class</th>
+                                        <th>
+                                            Phone Number
+                                        </th>
+                                        <th>Email</th>
+                                        <th>
+                                            LinkedIn
+                                        </th>
+                                    </tr>
+                                </thead>
 
-                    <div className="admin-table-wrap">
-                        <table className="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Role</th>
-                                    <th>Class</th>
-                                    <th>Years Active</th>
-                                    <th>Email</th>
-                                    <th>LinkedIn</th>
-                                    <th>Contact Info</th>
-                                </tr>
-                            </thead>
+                                <tbody>
+                                    {previewMembers.map(
+                                        (
+                                            member,
+                                            index
+                                        ) => (
+                                            <tr
+                                                key={`${member.name}-${index}`}
+                                            >
+                                                <td>
+                                                    {
+                                                        member.name
+                                                    }
+                                                </td>
 
-                            <tbody>
-                                {previewMembers.map(
-                                    (member, index) => (
-                                        <tr
-                                            key={`${member.name}-${index}`}
-                                        >
-                                            <td>{member.name}</td>
-                                            <td>
-                                                {member.role || '—'}
-                                            </td>
-                                            <td>
-                                                {member.graduation_year ||
-                                                    '—'}
-                                            </td>
-                                            <td>
-                                                {member.years_active ||
-                                                    '—'}
-                                            </td>
-                                            <td>
-                                                {member.email || '—'}
-                                            </td>
-                                            <td>
-                                                {member.linkedin
-                                                    ? 'LinkedIn'
-                                                    : '—'}
-                                            </td>
-                                            <td>
-                                                {member.contact_info ||
-                                                    '—'}
-                                            </td>
-                                        </tr>
-                                    )
-                                )}
-                            </tbody>
-                        </table>
+                                                <td>
+                                                    {member.role ||
+                                                        '—'}
+                                                </td>
+
+                                                <td>
+                                                    {member.graduation_year ||
+                                                        '—'}
+                                                </td>
+
+                                                <td>
+                                                    {member.contact_info ||
+                                                        '—'}
+                                                </td>
+
+                                                <td>
+                                                    {member.email ||
+                                                        '—'}
+                                                </td>
+
+                                                <td>
+                                                    {member.linkedin
+                                                        ? 'LinkedIn'
+                                                        : '—'}
+                                                </td>
+                                            </tr>
+                                        )
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
             <div className="admin-current-card">
                 <div className="admin-current-header">
@@ -411,18 +494,21 @@ function MemberArchiveAdmin() {
                         </p>
 
                         <h3>
-                            {liveMembers.length} Former Member
-                            {liveMembers.length === 1
+                            {liveMembers.length}{' '}
+                            Former Member
+                            {liveMembers.length ===
+                                1
                                 ? ''
                                 : 's'}
                         </h3>
                     </div>
                 </div>
 
-                {liveMembers.length === 0 ? (
+                {liveMembers.length ===
+                    0 ? (
                     <p>
-                        No former members have been published
-                        yet.
+                        No former members have
+                        been published yet.
                     </p>
                 ) : (
                     <div className="admin-table-wrap">
@@ -432,25 +518,68 @@ function MemberArchiveAdmin() {
                                     <th>Name</th>
                                     <th>Role</th>
                                     <th>Class</th>
-                                    <th>Years Active</th>
+                                    <th>
+                                        Phone Number
+                                    </th>
+                                    <th>Email</th>
+                                    <th>
+                                        LinkedIn
+                                    </th>
                                 </tr>
                             </thead>
 
                             <tbody>
-                                {liveMembers.map((member) => (
-                                    <tr key={member.id}>
-                                        <td>{member.name}</td>
-                                        <td>{member.role || '—'}</td>
-                                        <td>
-                                            {member.graduation_year ||
-                                                '—'}
-                                        </td>
-                                        <td>
-                                            {member.years_active ||
-                                                '—'}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {liveMembers.map(
+                                    (member) => (
+                                        <tr
+                                            key={
+                                                member.id
+                                            }
+                                        >
+                                            <td>
+                                                {
+                                                    member.name
+                                                }
+                                            </td>
+
+                                            <td>
+                                                {member.role ||
+                                                    '—'}
+                                            </td>
+
+                                            <td>
+                                                {member.graduation_year ||
+                                                    '—'}
+                                            </td>
+
+                                            <td>
+                                                {member.contact_info ||
+                                                    '—'}
+                                            </td>
+
+                                            <td>
+                                                {member.email ||
+                                                    '—'}
+                                            </td>
+
+                                            <td>
+                                                {member.linkedin ? (
+                                                    <a
+                                                        href={
+                                                            member.linkedin
+                                                        }
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
+                                                        LinkedIn
+                                                    </a>
+                                                ) : (
+                                                    '—'
+                                                )}
+                                            </td>
+                                        </tr>
+                                    )
+                                )}
                             </tbody>
                         </table>
                     </div>
