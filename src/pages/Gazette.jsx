@@ -57,7 +57,7 @@ function Gazette() {
     <main>
       <section className="page-hero">
         <p className="section-eyebrow">
-          NSSA PUBLICATION
+          SSAN PUBLICATION
         </p>
 
         <h1>Sikh Gazette</h1>

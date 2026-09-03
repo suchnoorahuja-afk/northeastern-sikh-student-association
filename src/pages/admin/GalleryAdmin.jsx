@@ -279,7 +279,6 @@ function GalleryAdmin({ onContentChange }) {
             }
 
             await loadPhotos()
-            await onContentChange?.()
         } catch (moveError) {
             console.error(moveError)
 

@@ -49,7 +49,7 @@ function Admin() {
         if (session) {
             loadDashboardCounts()
         }
-    }, [session, activeSection])
+    }, [session])
 
     async function loadDashboardCounts() {
         const [

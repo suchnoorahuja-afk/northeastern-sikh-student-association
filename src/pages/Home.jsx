@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import {
   getEvents,
   formatEventDate,
+  isCurrentOrUpcomingEvent,
 } from '../lib/events'
 
 import {
@@ -27,7 +28,13 @@ function Home() {
       try {
         const data = await getEvents()
 
-        setEvents(data.slice(0, 3))
+        setEvents(
+          data
+            .filter((event) =>
+              isCurrentOrUpcomingEvent(event.event_date)
+            )
+            .slice(0, 3)
+        )
       } catch (error) {
         console.error(
           'Could not load events:',
@@ -70,7 +77,7 @@ function Home() {
           <h1>
             Sikh Student Association
             <span>
-              at Northeastern University
+              at Northeastern
             </span>
           </h1>
 
@@ -100,7 +107,7 @@ function Home() {
         <div className="hero-logo">
           <img
             src="/nssa-logo.png"
-            alt="NSSA Logo"
+            alt="SSAN logo"
           />
         </div>
       </section>
@@ -217,7 +224,7 @@ function Home() {
           </h2>
 
           <p>
-            NSSA is a community for Sikh students and
+            SSAN is a community for Sikh students and
             anyone interested in learning more about
             Sikhi. We create spaces for connection,
             service, reflection, cultural programming,
@@ -229,7 +236,7 @@ function Home() {
             to="/about"
             className="text-link"
           >
-            Learn more about NSSA →
+            Learn more about SSAN →
           </Link>
         </div>
 
@@ -279,7 +286,7 @@ function Home() {
           </h2>
 
           <p>
-            Read our newsletter for NSSA updates,
+            Read our newsletter for SSAN updates,
             community stories, event recaps, and
             reflections from students.
           </p>
@@ -384,7 +391,7 @@ function Home() {
           </p>
 
           <h2>
-            There’s a place for you at NSSA.
+            There’s a place for you at SSAN.
           </h2>
 
           <p>

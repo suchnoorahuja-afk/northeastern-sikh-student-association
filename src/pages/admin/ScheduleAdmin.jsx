@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
 
-function ScheduleAdmin() {
+function ScheduleAdmin({ onContentChange }) {
     const [scheduleRows, setScheduleRows] = useState([])
     const [currentEvents, setCurrentEvents] = useState([])
     const [currentEventsLoading, setCurrentEventsLoading] =
@@ -238,7 +238,7 @@ function ScheduleAdmin() {
                 Location: 'Curry Student Center',
                 Category: 'Community',
                 Description:
-                    'Meet the NSSA community and learn about the semester ahead.',
+                    'Meet the SSAN community and learn about the semester ahead.',
                 Link: '',
             },
         ]
@@ -266,7 +266,7 @@ function ScheduleAdmin() {
 
         XLSX.writeFile(
             workbook,
-            'NSSA-Schedule-Template.xlsx'
+            'SSAN-Schedule-Template.xlsx'
         )
     }
 
@@ -326,6 +326,7 @@ function ScheduleAdmin() {
         setPublishing(false)
 
         await loadCurrentEvents()
+        await onContentChange?.()
     }
 
     return (

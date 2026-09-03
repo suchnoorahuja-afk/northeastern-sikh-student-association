@@ -38,8 +38,8 @@ function MemberArchive() {
         member.name,
         member.role,
         member.graduation_year,
-        member.years_active,
         member.email,
+        member.linkedin,
         member.contact_info,
       ]
         .filter(Boolean)
@@ -97,6 +97,7 @@ function MemberArchive() {
               <input
                 type="search"
                 className="member-archive-search"
+                aria-label="Search member archive"
                 placeholder="Search by name, role, year..."
                 value={search}
                 onChange={(event) =>
@@ -164,8 +165,10 @@ function MemberArchive() {
                     <div className="member-list-header">
                       <span>Name</span>
                       <span>Role</span>
-                      <span>Years Active</span>
-                      <span>Contact</span>
+                      <span>Graduation Year</span>
+                      <span>Phone Number</span>
+                      <span>Email</span>
+                      <span>LinkedIn</span>
                     </div>
 
                     {yearMembers.map((member) => (
@@ -182,20 +185,36 @@ function MemberArchive() {
                             'Former Member'}
                         </div>
 
-                        <div className="member-list-years">
-                          {member.years_active || '—'}
+                        <div className="member-list-graduation">
+                          {member.graduation_year || '—'}
                         </div>
 
-                        <div className="member-list-contact">
-                          {member.email && (
+                        <div className="member-list-phone">
+                          {member.contact_info ? (
+                            <a
+                              href={`tel:${member.contact_info}`}
+                            >
+                              {member.contact_info}
+                            </a>
+                          ) : (
+                            <span>—</span>
+                          )}
+                        </div>
+
+                        <div className="member-list-email">
+                          {member.email ? (
                             <a
                               href={`mailto:${member.email}`}
                             >
-                              Email
+                              {member.email}
                             </a>
+                          ) : (
+                            <span>—</span>
                           )}
+                        </div>
 
-                          {member.linkedin && (
+                        <div className="member-list-linkedin">
+                          {member.linkedin ? (
                             <a
                               href={member.linkedin}
                               target="_blank"
@@ -203,19 +222,9 @@ function MemberArchive() {
                             >
                               LinkedIn
                             </a>
+                          ) : (
+                            <span>—</span>
                           )}
-
-                          {member.contact_info && (
-                            <span>
-                              {member.contact_info}
-                            </span>
-                          )}
-
-                          {!member.email &&
-                            !member.linkedin &&
-                            !member.contact_info && (
-                              <span>—</span>
-                            )}
                         </div>
                       </article>
                     ))}

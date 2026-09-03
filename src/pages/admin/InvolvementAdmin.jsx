@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
-function InvolvementAdmin() {
+function InvolvementAdmin({ onContentChange }) {
     const [opportunities, setOpportunities] = useState([])
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
@@ -93,6 +93,7 @@ function InvolvementAdmin() {
 
             resetForm()
             await loadOpportunities()
+            await onContentChange?.()
         } catch (error) {
             console.error(error)
 
@@ -147,6 +148,7 @@ function InvolvementAdmin() {
 
         setMessage('Opportunity deleted.')
         await loadOpportunities()
+        await onContentChange?.()
     }
 
     async function moveOpportunity(index, direction) {
@@ -208,7 +210,7 @@ function InvolvementAdmin() {
                     <p>
                         Manage applications, sign-ups, leadership
                         opportunities, and other ways students can
-                        get involved with NSSA.
+                        get involved with SSAN.
                     </p>
                 </div>
             </div>

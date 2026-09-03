@@ -4,7 +4,7 @@ import {
   Routes,
   Route,
   Link,
-  useLocation,
+  NavLink,
 } from 'react-router-dom'
 
 import './App.css'
@@ -18,14 +18,30 @@ import Gallery from './pages/Gallery'
 import Applications from './pages/Applications'
 import About from './pages/About'
 import Admin from './pages/Admin'
+import NotFound from './pages/NotFound'
 
 function SiteLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const location = useLocation()
 
   useEffect(() => {
-    setMenuOpen(false)
-  }, [location.pathname])
+    if (!menuOpen) return undefined
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        setMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [menuOpen])
+
+  function navLinkClass({ isActive }) {
+    return isActive ? 'nav-link active' : 'nav-link'
+  }
 
   return (
     <>
@@ -35,10 +51,11 @@ function SiteLayout() {
             to="/"
             className="nav-logo"
             aria-label="SSAN Home"
+            onClick={() => setMenuOpen(false)}
           >
             <img
               src="/nssa-logo.png"
-              alt="Northeastern Sikh Student Association"
+              alt="Sikh Student Association at Northeastern"
             />
           </Link>
 
@@ -51,6 +68,7 @@ function SiteLayout() {
                 : 'Open navigation menu'
             }
             aria-expanded={menuOpen}
+            aria-controls="primary-navigation"
             onClick={() =>
               setMenuOpen((current) => !current)
             }
@@ -61,20 +79,21 @@ function SiteLayout() {
           </button>
 
           <div
+            id="primary-navigation"
             className={
               menuOpen
                 ? 'nav-links nav-links-open'
                 : 'nav-links'
             }
           >
-            <Link to="/">Home</Link>
-            <Link to="/schedule">Schedule</Link>
-            <Link to="/eboard">E-Board</Link>
-            <Link to="/gazette">Sikh Gazette</Link>
-            <Link to="/archive">Member Archive</Link>
-            <Link to="/gallery">Photo Gallery</Link>
-            <Link to="/applications">Get Involved</Link>
-            <Link to="/about">About</Link>
+            <NavLink to="/" end className={navLinkClass} onClick={() => setMenuOpen(false)}>Home</NavLink>
+            <NavLink to="/schedule" className={navLinkClass} onClick={() => setMenuOpen(false)}>Schedule</NavLink>
+            <NavLink to="/eboard" className={navLinkClass} onClick={() => setMenuOpen(false)}>E-Board</NavLink>
+            <NavLink to="/gazette" className={navLinkClass} onClick={() => setMenuOpen(false)}>Sikh Gazette</NavLink>
+            <NavLink to="/archive" className={navLinkClass} onClick={() => setMenuOpen(false)}>Member Archive</NavLink>
+            <NavLink to="/gallery" className={navLinkClass} onClick={() => setMenuOpen(false)}>Photo Gallery</NavLink>
+            <NavLink to="/applications" className={navLinkClass} onClick={() => setMenuOpen(false)}>Get Involved</NavLink>
+            <NavLink to="/about" className={navLinkClass} onClick={() => setMenuOpen(false)}>About</NavLink>
           </div>
         </nav>
       </header>
@@ -121,6 +140,8 @@ function SiteLayout() {
           path="/admin"
           element={<Admin />}
         />
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
 
       <footer className="site-footer">
@@ -133,7 +154,7 @@ function SiteLayout() {
 
             <div>
               <h2>
-                Northeastern Sikh Student Association
+                Sikh Student Association at Northeastern
               </h2>
 
               <p>Sikhi · Seva · Sangat</p>
@@ -194,7 +215,7 @@ function SiteLayout() {
 
         <div className="footer-bottom">
           <p>
-            Northeastern Sikh Student Association ·
+            Sikh Student Association at Northeastern ·
             Boston, Massachusetts
           </p>
 

@@ -337,7 +337,6 @@ function GazetteAdmin({ onContentChange }) {
       }
 
       await loadGazettes()
-      await onContentChange?.()
 
       setMessage(
         `Finished. Generated ${completed} cover image(s).`

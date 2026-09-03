@@ -24,3 +24,19 @@ export function formatEventDate(dateString) {
     day: String(date.getDate()).padStart(2, '0'),
   }
 }
+
+export function isCurrentOrUpcomingEvent(dateString) {
+  if (!dateString) return false
+
+  const [year, month, day] = dateString
+    .split('-')
+    .map(Number)
+
+  if (!year || !month || !day) return false
+
+  const eventDate = new Date(year, month - 1, day)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  return eventDate >= today
+}

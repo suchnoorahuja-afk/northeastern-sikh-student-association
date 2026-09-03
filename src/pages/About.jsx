@@ -3,9 +3,9 @@ function About() {
         <main className="inner-page">
             <section className="page-hero">
                 <p className="section-eyebrow">OUR COMMUNITY</p>
-                <h1>About NSSA</h1>
+                <h1>About SSAN</h1>
                 <p>
-                    The Northeastern Sikh Student Association brings students together
+                    The Sikh Student Association at Northeastern brings students together
                     through Sikhi, service, community, and cultural engagement.
                 </p>
             </section>
@@ -19,7 +19,7 @@ function About() {
 
                     <div>
                         <p>
-                            NSSA works to create a welcoming community for Sikh students while
+                            SSAN works to create a welcoming community for Sikh students while
                             giving the broader Northeastern community opportunities to learn
                             about Sikh history, values, traditions, and identity.
                         </p>
@@ -128,14 +128,14 @@ function About() {
                 </div>
 
                 <div className="everyone-welcome">
-                    <img src="/nssa-logo.png" alt="NSSA Logo" />
+                    <img src="/nssa-logo.png" alt="SSAN logo" />
 
                     <div>
                         <p className="section-eyebrow">EVERYONE IS WELCOME</p>
                         <h2>You do not have to be Sikh to join us.</h2>
                         <p>
                             Whether you grew up around Sikhi, are reconnecting with your
-                            faith, or simply want to learn more, NSSA welcomes you to our
+                            faith, or simply want to learn more, SSAN welcomes you to our
                             community and our events.
                         </p>
                     </div>

@@ -25,11 +25,11 @@ function Schedule() {
   return (
     <main className="inner-page">
       <section className="page-hero">
-        <p className="section-eyebrow">NSSA EVENTS</p>
+        <p className="section-eyebrow">SSAN EVENTS</p>
         <h1>Schedule</h1>
 
         <p>
-          Explore upcoming NSSA events, community gatherings, seva
+          Explore upcoming SSAN events, community gatherings, seva
           opportunities, and cultural programming.
         </p>
       </section>

@@ -35,7 +35,7 @@ function EBoard() {
         <h1>Our E-Board</h1>
 
         <p>
-          Meet the students helping lead NSSA and build
+          Meet the students helping lead SSAN and build
           Sikh community at Northeastern.
         </p>
       </section>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
-function EBoardAdmin() {
+function EBoardAdmin({ onContentChange }) {
     const [members, setMembers] = useState([])
     const [loading, setLoading] = useState(true)
 
@@ -274,6 +274,7 @@ function EBoardAdmin() {
 
             resetForm()
             await loadMembers()
+            await onContentChange?.()
         } catch (error) {
             console.error(error)
 
@@ -322,6 +323,7 @@ function EBoardAdmin() {
             )
 
             await loadMembers()
+            await onContentChange?.()
         } catch (error) {
             console.error(error)
 
@@ -420,7 +422,7 @@ function EBoardAdmin() {
 
                 <p className="admin-card-description">
                     Manage the people displayed on
-                    the NSSA E-Board page.
+                    the SSAN E-Board page.
                 </p>
 
                 <form
