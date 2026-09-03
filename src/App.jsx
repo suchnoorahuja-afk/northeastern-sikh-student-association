@@ -19,6 +19,7 @@ import Applications from './pages/Applications'
 import About from './pages/About'
 import Admin from './pages/Admin'
 import NotFound from './pages/NotFound'
+import RouteMetadata from './components/RouteMetadata'
 
 function SiteLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -45,6 +46,8 @@ function SiteLayout() {
 
   return (
     <>
+      <RouteMetadata />
+
       <header className="site-header">
         <nav className="navbar">
           <Link
