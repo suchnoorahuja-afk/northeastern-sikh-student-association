@@ -451,6 +451,7 @@ function GalleryAdmin({ onContentChange }) {
                                     <div className="gallery-admin-actions">
                                         <button
                                             type="button"
+                                            aria-label={`Move photo ${index + 1} up`}
                                             className="admin-secondary-button"
                                             disabled={
                                                 index === 0 ||
@@ -465,6 +466,7 @@ function GalleryAdmin({ onContentChange }) {
 
                                         <button
                                             type="button"
+                                            aria-label={`Move photo ${index + 1} down`}
                                             className="admin-secondary-button"
                                             disabled={
                                                 index ===

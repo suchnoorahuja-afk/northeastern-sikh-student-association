@@ -79,7 +79,7 @@ function Gazette() {
         )}
 
         {!loading && error && (
-          <div className="gazette-state">
+          <div className="gazette-state" role="alert">
             {error}
           </div>
         )}

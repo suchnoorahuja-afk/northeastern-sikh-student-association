@@ -413,6 +413,7 @@ function InvolvementAdmin({ onContentChange }) {
                                     <div className="admin-list-actions">
                                         <button
                                             type="button"
+                                            aria-label={`Move ${opportunity.title} up`}
                                             className="admin-order-button"
                                             onClick={() =>
                                                 moveOpportunity(index, -1)
@@ -428,6 +429,7 @@ function InvolvementAdmin({ onContentChange }) {
 
                                         <button
                                             type="button"
+                                            aria-label={`Move ${opportunity.title} down`}
                                             className="admin-order-button"
                                             onClick={() =>
                                                 moveOpportunity(index, 1)

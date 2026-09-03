@@ -43,7 +43,7 @@ function Schedule() {
         )}
 
         {error && (
-          <p className="schedule-status schedule-error">
+          <p className="schedule-status schedule-error" role="alert">
             {error}
           </p>
         )}

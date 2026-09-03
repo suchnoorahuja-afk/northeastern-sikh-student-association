@@ -58,4 +58,12 @@
     .gallery-admin-item>img {
         height: auto;
     }
+
+    .gallery-admin-actions {
+        width: 100%;
+    }
+
+    .gallery-admin-actions .admin-delete-button {
+        margin-left: 0;
+    }
 }

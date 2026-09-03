@@ -113,7 +113,7 @@ function Gallery() {
             )}
 
             {!loading && error && (
-                <div className="gallery-state gallery-state-error">
+                <div className="gallery-state gallery-state-error" role="alert">
                     {error}
                 </div>
             )}

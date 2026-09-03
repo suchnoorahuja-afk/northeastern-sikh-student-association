@@ -116,7 +116,7 @@ function Applications() {
           )}
 
           {!loading && error && (
-            <div className="involvement-state involvement-error">
+            <div className="involvement-state involvement-error" role="alert">
               {error}
             </div>
           )}
@@ -286,7 +286,14 @@ function Applications() {
               <strong>Instagram →</strong>
             </a>
 
-            <div className="involvement-path">
+            <a
+              href={safeExternalUrl(
+                'https://gmail.us5.list-manage.com/subscribe?u=1fdfb113ed921fad4b3c0cd80&id=55687c23cc'
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="involvement-path"
+            >
               <span>03</span>
 
               <h3>Join the Mailing List</h3>
@@ -297,8 +304,8 @@ function Applications() {
                 updates delivered directly to you.
               </p>
 
-              <strong>Coming Soon</strong>
-            </div>
+              <strong>Join the List →</strong>
+            </a>
 
             <Link
               to="/eboard"

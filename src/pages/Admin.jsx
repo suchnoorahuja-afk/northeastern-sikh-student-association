@@ -361,6 +361,7 @@ function Admin() {
                 <div className="admin-tabs">
                     <button
                         type="button"
+                        aria-pressed={activeSection === 'schedule'}
                         className={
                             activeSection === 'schedule'
                                 ? 'admin-tab active'
@@ -375,6 +376,7 @@ function Admin() {
 
                     <button
                         type="button"
+                        aria-pressed={activeSection === 'gazette'}
                         className={
                             activeSection === 'gazette'
                                 ? 'admin-tab active'
@@ -389,6 +391,7 @@ function Admin() {
 
                     <button
                         type="button"
+                        aria-pressed={activeSection === 'eboard'}
                         className={
                             activeSection === 'eboard'
                                 ? 'admin-tab active'
@@ -403,6 +406,7 @@ function Admin() {
 
                     <button
                         type="button"
+                        aria-pressed={activeSection === 'archive'}
                         className={
                             activeSection === 'archive'
                                 ? 'admin-tab active'
@@ -417,6 +421,7 @@ function Admin() {
 
                     <button
                         type="button"
+                        aria-pressed={activeSection === 'involvement'}
                         className={
                             activeSection === 'involvement'
                                 ? 'admin-tab active'
@@ -431,6 +436,7 @@ function Admin() {
 
                     <button
                         type="button"
+                        aria-pressed={activeSection === 'gallery'}
                         className={
                             activeSection === 'gallery'
                                 ? 'admin-tab active'
