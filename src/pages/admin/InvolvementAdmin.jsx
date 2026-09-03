@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import {
+    normalizeExternalUrl,
+    safeExternalUrl,
+} from '../../lib/externalUrls'
 
 function InvolvementAdmin({ onContentChange }) {
     const [opportunities, setOpportunities] = useState([])
@@ -11,6 +15,8 @@ function InvolvementAdmin({ onContentChange }) {
     const [editingId, setEditingId] = useState(null)
     const [message, setMessage] = useState('')
     const [saving, setSaving] = useState(false)
+    const [deletingId, setDeletingId] = useState(null)
+    const [reordering, setReordering] = useState(false)
 
     useEffect(() => {
         loadOpportunities()
@@ -59,13 +65,15 @@ function InvolvementAdmin({ onContentChange }) {
         )
 
         try {
+            const normalizedLink = normalizeExternalUrl(link)
+
             if (editingId) {
                 const { error } = await supabase
                     .from('involvement_opportunities')
                     .update({
                         title: title.trim(),
                         description: description.trim() || null,
-                        link: link.trim() || null,
+                        link: normalizedLink || null,
                         status,
                         category: category.trim() || null,
                     })
@@ -80,7 +88,7 @@ function InvolvementAdmin({ onContentChange }) {
                     .insert({
                         title: title.trim(),
                         description: description.trim() || null,
-                        link: link.trim() || null,
+                        link: normalizedLink || null,
                         status,
                         category: category.trim() || null,
                         display_order: opportunities.length,
@@ -127,28 +135,33 @@ function InvolvementAdmin({ onContentChange }) {
 
         if (!confirmed) return
 
-        const { error } = await supabase
-            .from('involvement_opportunities')
-            .delete()
-            .eq('id', opportunity.id)
+        setDeletingId(opportunity.id)
+        setMessage('')
 
-        if (error) {
+        try {
+            const { error } = await supabase
+                .from('involvement_opportunities')
+                .delete()
+                .eq('id', opportunity.id)
+
+            if (error) throw error
+
+            if (editingId === opportunity.id) {
+                resetForm()
+            }
+
+            setMessage('Opportunity deleted.')
+            await loadOpportunities()
+            await onContentChange?.()
+        } catch (error) {
             console.error(error)
 
             setMessage(
                 `Could not delete opportunity: ${error.message}`
             )
-
-            return
+        } finally {
+            setDeletingId(null)
         }
-
-        if (editingId === opportunity.id) {
-            resetForm()
-        }
-
-        setMessage('Opportunity deleted.')
-        await loadOpportunities()
-        await onContentChange?.()
     }
 
     async function moveOpportunity(index, direction) {
@@ -168,6 +181,7 @@ function InvolvementAdmin({ onContentChange }) {
         reordered.splice(targetIndex, 0, movedItem)
 
         setOpportunities(reordered)
+        setReordering(true)
 
         try {
             for (let i = 0; i < reordered.length; i += 1) {
@@ -190,6 +204,8 @@ function InvolvementAdmin({ onContentChange }) {
             )
 
             await loadOpportunities()
+        } finally {
+            setReordering(false)
         }
     }
 
@@ -383,9 +399,9 @@ function InvolvementAdmin({ onContentChange }) {
                                             </p>
                                         )}
 
-                                        {opportunity.link && (
+                                        {safeExternalUrl(opportunity.link) && (
                                             <a
-                                                href={opportunity.link}
+                                                href={safeExternalUrl(opportunity.link)}
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >
@@ -401,7 +417,11 @@ function InvolvementAdmin({ onContentChange }) {
                                             onClick={() =>
                                                 moveOpportunity(index, -1)
                                             }
-                                            disabled={index === 0}
+                                            disabled={
+                                                index === 0 ||
+                                                reordering ||
+                                                deletingId !== null
+                                            }
                                         >
                                             ↑
                                         </button>
@@ -414,7 +434,9 @@ function InvolvementAdmin({ onContentChange }) {
                                             }
                                             disabled={
                                                 index ===
-                                                opportunities.length - 1
+                                                opportunities.length - 1 ||
+                                                reordering ||
+                                                deletingId !== null
                                             }
                                         >
                                             ↓
@@ -423,6 +445,7 @@ function InvolvementAdmin({ onContentChange }) {
                                         <button
                                             type="button"
                                             className="button button-outline"
+                                            disabled={reordering || deletingId !== null}
                                             onClick={() =>
                                                 handleEdit(opportunity)
                                             }
@@ -433,11 +456,14 @@ function InvolvementAdmin({ onContentChange }) {
                                         <button
                                             type="button"
                                             className="admin-delete-button"
+                                            disabled={reordering || deletingId !== null}
                                             onClick={() =>
                                                 handleDelete(opportunity)
                                             }
                                         >
-                                            Delete
+                                            {deletingId === opportunity.id
+                                                ? 'Deleting...'
+                                                : 'Delete'}
                                         </button>
                                     </div>
                                 </article>

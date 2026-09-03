@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react'
 
 import { supabase } from '../../lib/supabase'
 import { getGalleryPhotos } from '../../lib/gallery'
+import {
+    MAX_IMAGE_UPLOAD_LABEL,
+    optimizeImageFile,
+    validateImageFile,
+} from '../../lib/uploadFiles'
 import './GalleryAdmin.css'
 
 function safeName(name) {
@@ -41,18 +46,19 @@ function GalleryAdmin({ onContentChange }) {
         initialLoad()
     }, [])
 
-    function handleFiles(event) {
+    async function handleFiles(event) {
         const selected = Array.from(
             event.target.files || []
         )
 
-        const invalid = selected.find(
-            (file) => !file.type.startsWith('image/')
-        )
-
-        if (invalid) {
+        try {
+            await Promise.all(
+                selected.map(validateImageFile)
+            )
+        } catch (validationError) {
             setFiles([])
-            setError('Gallery uploads must be image files.')
+            event.target.value = ''
+            setError(validationError.message)
             return
         }
 
@@ -93,6 +99,8 @@ function GalleryAdmin({ onContentChange }) {
                 index += 1
             ) {
                 const file = files[index]
+                const optimizedFile =
+                    await optimizeImageFile(file)
 
                 const path =
                     `photos/${Date.now()}-${index}-${safeName(
@@ -102,9 +110,9 @@ function GalleryAdmin({ onContentChange }) {
                 const { error: uploadError } =
                     await supabase.storage
                         .from('gallery')
-                        .upload(path, file, {
+                        .upload(path, optimizedFile, {
                             contentType:
-                                file.type || 'image/jpeg',
+                                optimizedFile.type,
                             cacheControl: '31536000',
                             upsert: false,
                         })
@@ -170,9 +178,17 @@ function GalleryAdmin({ onContentChange }) {
             console.error(uploadError)
 
             if (uploadedPaths.length > 0) {
-                await supabase.storage
+                const { error: cleanupError } = await supabase.storage
                     .from('gallery')
                     .remove(uploadedPaths)
+
+                if (cleanupError) {
+                    setMessage('')
+                    setError(
+                        `Could not upload photo: ${uploadError.message}. Uploaded files also could not be cleaned up; check Supabase Storage for orphaned files.`
+                    )
+                    return
+                }
             }
 
             setMessage('')
@@ -206,6 +222,8 @@ function GalleryAdmin({ onContentChange }) {
                 throw deleteError
             }
 
+            let cleanupFailed = false
+
             if (photo.image_path) {
                 const { error: storageError } =
                     await supabase.storage
@@ -214,12 +232,17 @@ function GalleryAdmin({ onContentChange }) {
 
                 if (storageError) {
                     console.error(storageError)
+                    cleanupFailed = true
                 }
             }
 
             await loadPhotos()
             await onContentChange?.()
-            setMessage('Photo deleted.')
+            setMessage(
+                cleanupFailed
+                    ? 'Photo removed from the gallery, but its stored image could not be deleted. Remove the orphaned file from Supabase Storage or try again later.'
+                    : 'Photo deleted.'
+            )
         } catch (deletePhotoError) {
             console.error(deletePhotoError)
 
@@ -313,7 +336,7 @@ function GalleryAdmin({ onContentChange }) {
                 onSubmit={handleUpload}
             >
                 <label>
-                    Photos
+                    Photos (JPEG, PNG, or WebP; maximum {MAX_IMAGE_UPLOAD_LABEL} each)
                     <input
                         id="gallery-photo-upload"
                         type="file"
@@ -431,7 +454,7 @@ function GalleryAdmin({ onContentChange }) {
                                             className="admin-secondary-button"
                                             disabled={
                                                 index === 0 ||
-                                                busyId === photo.id
+                                                busyId !== null
                                             }
                                             onClick={() =>
                                                 movePhoto(index, -1)
@@ -446,7 +469,7 @@ function GalleryAdmin({ onContentChange }) {
                                             disabled={
                                                 index ===
                                                 photos.length - 1 ||
-                                                busyId === photo.id
+                                                busyId !== null
                                             }
                                             onClick={() =>
                                                 movePhoto(index, 1)
@@ -459,7 +482,7 @@ function GalleryAdmin({ onContentChange }) {
                                             type="button"
                                             className="admin-delete-button"
                                             disabled={
-                                                busyId === photo.id
+                                                busyId !== null
                                             }
                                             onClick={() =>
                                                 handleDelete(photo)

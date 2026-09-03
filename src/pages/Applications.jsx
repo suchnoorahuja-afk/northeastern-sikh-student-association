@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { supabase } from '../lib/supabase'
+import { safeExternalUrl } from '../lib/externalUrls'
 import './Applications.css'
 
 function formatStatus(status) {
@@ -148,6 +149,8 @@ function Applications() {
                   (opportunity) => {
                     const status =
                       opportunity.status || 'open'
+                    const opportunityLink =
+                      safeExternalUrl(opportunity.link)
 
                     return (
                       <article
@@ -191,10 +194,10 @@ function Applications() {
 
                           <div className="involvement-feature-action">
                             {status === 'open' &&
-                              opportunity.link && (
+                              opportunityLink && (
                                 <a
                                   href={
-                                    opportunity.link
+                                    opportunityLink
                                   }
                                   target="_blank"
                                   rel="noreferrer"
@@ -205,7 +208,7 @@ function Applications() {
                               )}
 
                             {status === 'open' &&
-                              !opportunity.link && (
+                              !opportunityLink && (
                                 <span className="involvement-unavailable">
                                   Details coming soon
                                 </span>

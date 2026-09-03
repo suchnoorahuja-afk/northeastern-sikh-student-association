@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getEvents, formatEventDate } from '../lib/events'
+import { safeExternalUrl } from '../lib/externalUrls'
 
 function Schedule() {
   const [events, setEvents] = useState([])
@@ -57,6 +58,7 @@ function Schedule() {
           <div className="schedule-list">
             {events.map((event) => {
               const date = formatEventDate(event.event_date)
+              const eventLink = safeExternalUrl(event.link)
 
               return (
                 <article
@@ -91,9 +93,9 @@ function Schedule() {
                       )}
                     </div>
 
-                    {event.link && (
+                    {eventLink && (
                       <a
-                        href={event.link}
+                        href={eventLink}
                         target="_blank"
                         rel="noreferrer"
                         className="text-link schedule-event-link"

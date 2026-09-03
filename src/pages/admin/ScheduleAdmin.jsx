@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
-import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
+import { normalizeExternalUrl } from '../../lib/externalUrls'
+import {
+    MAX_EXCEL_UPLOAD_BYTES,
+    MAX_EXCEL_UPLOAD_LABEL,
+} from '../../lib/uploadFiles'
 
 function ScheduleAdmin({ onContentChange }) {
     const [scheduleRows, setScheduleRows] = useState([])
@@ -38,18 +42,35 @@ function ScheduleAdmin({ onContentChange }) {
         return String(header || '').trim().toLowerCase()
     }
 
-    function formatExcelDate(value) {
+    function calendarDate(year, month, day) {
+        const date = new Date(year, month - 1, day)
+
+        if (
+            date.getFullYear() !== year ||
+            date.getMonth() !== month - 1 ||
+            date.getDate() !== day
+        ) {
+            return ''
+        }
+
+        return [
+            year,
+            String(month).padStart(2, '0'),
+            String(day).padStart(2, '0'),
+        ].join('-')
+    }
+
+    function formatExcelDate(value, XLSX) {
         if (!value) return ''
 
         if (value instanceof Date) {
-            const year = value.getFullYear()
-            const month = String(value.getMonth() + 1).padStart(
-                2,
-                '0'
-            )
-            const day = String(value.getDate()).padStart(2, '0')
+            if (Number.isNaN(value.getTime())) return ''
 
-            return `${year}-${month}-${day}`
+            return calendarDate(
+                value.getFullYear(),
+                value.getMonth() + 1,
+                value.getDate()
+            )
         }
 
         if (typeof value === 'number') {
@@ -57,27 +78,33 @@ function ScheduleAdmin({ onContentChange }) {
 
             if (!parsed) return ''
 
-            const year = parsed.y
-            const month = String(parsed.m).padStart(2, '0')
-            const day = String(parsed.d).padStart(2, '0')
-
-            return `${year}-${month}-${day}`
+            return calendarDate(parsed.y, parsed.m, parsed.d)
         }
 
-        const date = new Date(value)
+        const text = String(value).trim()
+        const dateParts = text.match(
+            /^(\d{4})-(\d{1,2})-(\d{1,2})$|^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+        )
+
+        if (dateParts) {
+            const year = Number(dateParts[1] || dateParts[6])
+            const month = Number(dateParts[2] || dateParts[4])
+            const day = Number(dateParts[3] || dateParts[5])
+
+            return calendarDate(year, month, day)
+        }
+
+        const date = new Date(text)
 
         if (Number.isNaN(date.getTime())) {
             return ''
         }
 
-        const year = date.getFullYear()
-        const month = String(date.getMonth() + 1).padStart(
-            2,
-            '0'
+        return calendarDate(
+            date.getFullYear(),
+            date.getMonth() + 1,
+            date.getDate()
         )
-        const day = String(date.getDate()).padStart(2, '0')
-
-        return `${year}-${month}-${day}`
     }
 
     function formatExcelTime(value) {
@@ -121,7 +148,7 @@ function ScheduleAdmin({ onContentChange }) {
         return String(value).trim()
     }
 
-    function handleFileUpload(event) {
+    async function handleFileUpload(event) {
         const file = event.target.files?.[0]
 
         if (!file) return
@@ -131,35 +158,60 @@ function ScheduleAdmin({ onContentChange }) {
         setFileName(file.name)
         setMessage('')
 
-        const reader = new FileReader()
-
-        reader.onload = (readerEvent) => {
-            try {
-                const data = readerEvent.target.result
-
-                const workbook = XLSX.read(data, {
-                    type: 'array',
-                    cellDates: true,
-                })
-
-                const firstSheetName = workbook.SheetNames[0]
-                const worksheet = workbook.Sheets[firstSheetName]
-
-                const rawRows = XLSX.utils.sheet_to_json(
-                    worksheet,
-                    {
-                        defval: '',
-                    }
+        try {
+            if (file.size > MAX_EXCEL_UPLOAD_BYTES) {
+                throw new Error(
+                    `The Excel workbook must be ${MAX_EXCEL_UPLOAD_LABEL} or smaller.`
                 )
+            }
 
-                if (rawRows.length === 0) {
-                    setUploadError(
-                        'The spreadsheet does not contain any event rows.'
-                    )
-                    return
-                }
+            const XLSX = await import('xlsx')
+            const data = await file.arrayBuffer()
+            const workbook = XLSX.read(data, {
+                type: 'array',
+                cellDates: true,
+            })
 
-                const parsedRows = rawRows.map((row, index) => {
+            const firstSheetName = workbook.SheetNames[0]
+            const worksheet = workbook.Sheets[firstSheetName]
+
+            if (!worksheet) {
+                throw new Error(
+                    'The Excel file does not contain a readable worksheet.'
+                )
+            }
+
+            const headerRows = XLSX.utils.sheet_to_json(
+                worksheet,
+                { header: 1, defval: '', blankrows: false }
+            )
+            const headers = (headerRows[0] || []).map(normalizeHeader)
+            const hasDate = headers.some((header) =>
+                ['date', 'event date', 'event_date'].includes(header)
+            )
+            const hasEvent = headers.some((header) =>
+                ['event', 'title', 'event name'].includes(header)
+            )
+
+            if (!hasDate || !hasEvent) {
+                throw new Error(
+                    'The first worksheet must include Date and Event columns.'
+                )
+            }
+
+            const rawRows = XLSX.utils.sheet_to_json(
+                worksheet,
+                { defval: '' }
+            )
+
+            if (rawRows.length === 0) {
+                throw new Error(
+                    'The spreadsheet does not contain any event rows.'
+                )
+            }
+
+            const seenEvents = new Set()
+            const parsedRows = rawRows.map((row, index) => {
                     const normalizedRow = {}
 
                     Object.entries(row).forEach(([key, value]) => {
@@ -176,9 +228,21 @@ function ScheduleAdmin({ onContentChange }) {
                         normalizedRow.title ||
                         normalizedRow['event name']
 
+                    let normalizedLink
+                    try {
+                        normalizedLink = normalizeExternalUrl(
+                            normalizedRow.link
+                        )
+                    } catch (urlError) {
+                        throw new Error(
+                            `Link in Excel row ${index + 2}: ${urlError.message}`,
+                            { cause: urlError }
+                        )
+                    }
+
                     return {
                         rowNumber: index + 2,
-                        event_date: formatExcelDate(dateValue),
+                        event_date: formatExcelDate(dateValue, XLSX),
                         title: String(titleValue || '').trim(),
                         time: formatExcelTime(normalizedRow.time),
                         location: String(
@@ -190,46 +254,59 @@ function ScheduleAdmin({ onContentChange }) {
                         description: String(
                             normalizedRow.description || ''
                         ).trim(),
-                        link: String(normalizedRow.link || '').trim(),
+                        link: normalizedLink,
                     }
-                })
+            })
 
-                const invalidRows = parsedRows.filter(
-                    (row) => !row.event_date || !row.title
-                )
+            const invalidRows = parsedRows.filter(
+                (row) => !row.event_date || !row.title
+            )
 
                 if (invalidRows.length > 0) {
                     const rowNumbers = invalidRows
                         .map((row) => row.rowNumber)
                         .join(', ')
 
-                    setUploadError(
-                        `Some rows are missing a valid Date or Event. Check Excel row(s): ${rowNumbers}.`
-                    )
-
-                    return
-                }
-
-                parsedRows.sort(
-                    (a, b) =>
-                        new Date(a.event_date) -
-                        new Date(b.event_date)
-                )
-
-                setScheduleRows(parsedRows)
-            } catch (error) {
-                console.error(error)
-
-                setUploadError(
-                    'The spreadsheet could not be read. Make sure it is a valid Excel file.'
+                throw new Error(
+                    `Some rows are missing a valid Date or Event. Check Excel row(s): ${rowNumbers}.`
                 )
             }
-        }
 
-        reader.readAsArrayBuffer(file)
+            for (const row of parsedRows) {
+                const duplicateKey = [
+                    row.event_date,
+                    row.title.toLowerCase(),
+                    row.time.toLowerCase(),
+                    row.location.toLowerCase(),
+                ].join('|')
+
+                if (seenEvents.has(duplicateKey)) {
+                    throw new Error(
+                        `Duplicate event detected in Excel row ${row.rowNumber}: ${row.title}.`
+                    )
+                }
+
+                seenEvents.add(duplicateKey)
+            }
+
+            parsedRows.sort(
+                (a, b) =>
+                    new Date(a.event_date) -
+                    new Date(b.event_date)
+            )
+
+            setScheduleRows(parsedRows)
+        } catch (error) {
+            console.error(error)
+
+            setUploadError(
+                `The spreadsheet could not be used: ${error.message}`
+            )
+        }
     }
 
-    function downloadTemplate() {
+    async function downloadTemplate() {
+        const XLSX = await import('xlsx')
         const templateData = [
             {
                 Date: '9/10/2026',
@@ -327,6 +404,11 @@ function ScheduleAdmin({ onContentChange }) {
 
         await loadCurrentEvents()
         await onContentChange?.()
+
+        setScheduleRows([])
+        setFileName('')
+        const input = document.getElementById('schedule-upload')
+        if (input) input.value = ''
     }
 
     return (
@@ -355,7 +437,7 @@ function ScheduleAdmin({ onContentChange }) {
                 <div className="excel-upload-box">
                     <label htmlFor="schedule-upload">
                         <span>Upload Excel Schedule</span>
-                        <small>.xlsx or .xls</small>
+                        <small>.xlsx or .xls, maximum {MAX_EXCEL_UPLOAD_LABEL}</small>
                     </label>
 
                     <input

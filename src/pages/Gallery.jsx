@@ -1,19 +1,30 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { getGalleryPhotos } from '../lib/gallery'
+import { getGalleryPhotoPage } from '../lib/gallery'
 import './Gallery.css'
+
+const GALLERY_BATCH_SIZE = 24
 
 function Gallery() {
     const [photos, setPhotos] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [selectedPhoto, setSelectedPhoto] = useState(null)
+    const [hasMore, setHasMore] = useState(false)
+    const [loadingMore, setLoadingMore] = useState(false)
+    const [loadMoreError, setLoadMoreError] = useState('')
+    const closeButtonRef = useRef(null)
+    const openerRef = useRef(null)
 
     useEffect(() => {
         async function loadPhotos() {
             try {
-                const data = await getGalleryPhotos()
-                setPhotos(data)
+                const page = await getGalleryPhotoPage(
+                    0,
+                    GALLERY_BATCH_SIZE
+                )
+                setPhotos(page.photos)
+                setHasMore(page.hasMore)
             } catch (loadError) {
                 console.error(loadError)
                 setError('Could not load the photo gallery.')
@@ -25,20 +36,61 @@ function Gallery() {
         loadPhotos()
     }, [])
 
+    async function loadMorePhotos() {
+        setLoadingMore(true)
+        setLoadMoreError('')
+
+        try {
+            const page = await getGalleryPhotoPage(
+                photos.length,
+                GALLERY_BATCH_SIZE
+            )
+
+            setPhotos((current) => {
+                const knownIds = new Set(
+                    current.map((photo) => photo.id)
+                )
+                const newPhotos = page.photos.filter(
+                    (photo) => !knownIds.has(photo.id)
+                )
+
+                return [...current, ...newPhotos]
+            })
+            setHasMore(page.hasMore)
+        } catch (loadError) {
+            console.error(loadError)
+            setLoadMoreError('Could not load more gallery photos.')
+        } finally {
+            setLoadingMore(false)
+        }
+    }
+
     useEffect(() => {
         function handleKeyDown(event) {
             if (event.key === 'Escape') {
                 setSelectedPhoto(null)
             }
+
+            if (event.key === 'Tab') {
+                event.preventDefault()
+                closeButtonRef.current?.focus()
+            }
         }
 
         if (selectedPhoto) {
+            const previousOverflow = document.body.style.overflow
             document.body.style.overflow = 'hidden'
             window.addEventListener('keydown', handleKeyDown)
+            closeButtonRef.current?.focus()
+
+            return () => {
+                document.body.style.overflow = previousOverflow
+                window.removeEventListener('keydown', handleKeyDown)
+                openerRef.current?.focus()
+            }
         }
 
         return () => {
-            document.body.style.overflow = ''
             window.removeEventListener('keydown', handleKeyDown)
         }
     }, [selectedPhoto])
@@ -93,9 +145,10 @@ function Gallery() {
                                 type="button"
                                 className="gallery-photo"
                                 key={photo.id}
-                                onClick={() =>
+                                onClick={(event) => {
+                                    openerRef.current = event.currentTarget
                                     setSelectedPhoto(photo)
-                                }
+                                }}
                                 aria-label={`Open ${photo.alt_text ||
                                     photo.caption ||
                                     'gallery photo'
@@ -106,9 +159,10 @@ function Gallery() {
                                     alt={
                                         photo.alt_text ||
                                         photo.caption ||
-                                        'SSAN community'
+                                        'SSAN community event photo'
                                     }
                                     loading="lazy"
+                                    decoding="async"
                                 />
 
                                 {photo.caption && (
@@ -121,12 +175,35 @@ function Gallery() {
                     </section>
                 )}
 
+            {!loading && !error && hasMore && (
+                <div className="gallery-load-more">
+                    <button
+                        type="button"
+                        className="button button-blue"
+                        onClick={loadMorePhotos}
+                        disabled={loadingMore}
+                    >
+                        {loadingMore ? 'Loading...' : 'Load More'}
+                    </button>
+                    {loadMoreError && (
+                        <p className="gallery-state-error" role="alert">
+                            {loadMoreError}
+                        </p>
+                    )}
+                </div>
+            )}
+
             {selectedPhoto && (
                 <div
                     className="gallery-lightbox"
                     role="dialog"
                     aria-modal="true"
                     aria-label="Photo preview"
+                    aria-describedby={
+                        selectedPhoto.caption
+                            ? 'gallery-lightbox-caption'
+                            : undefined
+                    }
                     onMouseDown={(event) => {
                         if (
                             event.target === event.currentTarget
@@ -137,6 +214,7 @@ function Gallery() {
                 >
                     <button
                         type="button"
+                        ref={closeButtonRef}
                         className="gallery-lightbox-close"
                         onClick={() =>
                             setSelectedPhoto(null)
@@ -152,12 +230,14 @@ function Gallery() {
                             alt={
                                 selectedPhoto.alt_text ||
                                 selectedPhoto.caption ||
-                                'SSAN community'
+                                'SSAN community event photo'
                             }
                         />
 
                         {selectedPhoto.caption && (
-                            <p>{selectedPhoto.caption}</p>
+                            <p id="gallery-lightbox-caption">
+                                {selectedPhoto.caption}
+                            </p>
                         )}
                     </div>
                 </div>

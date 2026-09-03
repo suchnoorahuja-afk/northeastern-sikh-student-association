@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getMemberArchive } from '../lib/memberArchive'
+import { safeExternalUrl } from '../lib/externalUrls'
 import './MemberArchive.css'
 
 function MemberArchive() {
@@ -214,9 +215,9 @@ function MemberArchive() {
                         </div>
 
                         <div className="member-list-linkedin">
-                          {member.linkedin ? (
+                          {safeExternalUrl(member.linkedin) ? (
                             <a
-                              href={member.linkedin}
+                              href={safeExternalUrl(member.linkedin)}
                               target="_blank"
                               rel="noreferrer"
                             >

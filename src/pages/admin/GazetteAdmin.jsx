@@ -1,13 +1,32 @@
 import { useEffect, useState } from 'react'
-import { pdfjs } from 'react-pdf'
 
 import { supabase } from '../../lib/supabase'
 import { formatGazetteDate } from '../../lib/gazettes'
+import {
+  normalizeExternalUrl,
+  safeExternalUrl,
+} from '../../lib/externalUrls'
+import {
+  MAX_PDF_UPLOAD_LABEL,
+  validatePdfFile,
+} from '../../lib/uploadFiles'
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString()
+let pdfJsPromise
+
+async function getPdfJs() {
+  if (!pdfJsPromise) {
+    pdfJsPromise = import('react-pdf').then(({ pdfjs }) => {
+      pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.min.mjs',
+        import.meta.url
+      ).toString()
+
+      return pdfjs
+    })
+  }
+
+  return pdfJsPromise
+}
 
 function cleanFileName(name) {
   return String(name || 'gazette.pdf')
@@ -20,6 +39,7 @@ function fileStem(name) {
 }
 
 async function renderFirstPageToJpegBlob(source) {
+  const pdfjs = await getPdfJs()
   const loadingTask = pdfjs.getDocument(source)
   const pdf = await loadingTask.promise
   const page = await pdf.getPage(1)
@@ -146,11 +166,10 @@ function GazetteAdmin({ onContentChange }) {
       return
     }
 
-    if (
-      pdfFile.type !== 'application/pdf' &&
-      !pdfFile.name.toLowerCase().endsWith('.pdf')
-    ) {
-      setError('The Gazette file must be a PDF.')
+    try {
+      await validatePdfFile(pdfFile)
+    } catch (validationError) {
+      setError(validationError.message)
       return
     }
 
@@ -169,7 +188,18 @@ function GazetteAdmin({ onContentChange }) {
       const pdfPath = `pdfs/${timestamp}-${cleanName}`
       const coverPath = `covers/${timestamp}-${stem}.jpg`
 
-      const coverBlob = await createCoverFromFile(pdfFile)
+      let coverBlob
+
+      try {
+        coverBlob = await createCoverFromFile(pdfFile)
+      } catch (coverError) {
+        throw new Error(
+          `The PDF could not be processed into a cover image. ${coverError.message}`,
+          { cause: coverError }
+        )
+      }
+
+      setMessage('Cover created. Uploading Gazette PDF...')
 
       const { error: pdfUploadError } =
         await supabase.storage
@@ -239,9 +269,17 @@ function GazetteAdmin({ onContentChange }) {
       console.error(publishError)
 
       if (uploadedPaths.length > 0) {
-        await supabase.storage
+        const { error: cleanupError } = await supabase.storage
           .from('gazettes')
           .remove(uploadedPaths)
+
+        if (cleanupError) {
+          setError(
+            `Could not publish Gazette: ${publishError.message}. Uploaded files also could not be cleaned up; check Supabase Storage for orphaned files.`
+          )
+          setMessage('')
+          return
+        }
       }
 
       setMessage('')
@@ -282,14 +320,16 @@ function GazetteAdmin({ onContentChange }) {
 
     try {
       for (const gazette of missing) {
-        if (!gazette.link) {
+        const safePdfUrl = normalizeExternalUrl(gazette.link)
+
+        if (!safePdfUrl) {
           throw new Error(
             `"${gazette.title}" does not have a PDF link.`
           )
         }
 
         const coverBlob =
-          await createCoverFromUrl(gazette.link)
+          await createCoverFromUrl(safePdfUrl)
 
         const timestamp = Date.now()
         const coverPath =
@@ -323,9 +363,16 @@ function GazetteAdmin({ onContentChange }) {
           .eq('id', gazette.id)
 
         if (updateError) {
-          await supabase.storage
+          const { error: cleanupError } = await supabase.storage
             .from('gazettes')
             .remove([coverPath])
+
+          if (cleanupError) {
+            throw new Error(
+              `${updateError.message}. The generated cover also could not be cleaned up; check Supabase Storage for an orphaned file.`,
+              { cause: updateError }
+            )
+          }
 
           throw updateError
         }
@@ -378,6 +425,8 @@ function GazetteAdmin({ onContentChange }) {
         throw deleteError
       }
 
+      let cleanupFailed = false
+
       if (pathsToDelete.length > 0) {
         const { error: storageError } =
           await supabase.storage
@@ -386,13 +435,18 @@ function GazetteAdmin({ onContentChange }) {
 
         if (storageError) {
           console.error(storageError)
+          cleanupFailed = true
         }
       }
 
       await loadGazettes()
       await onContentChange?.()
 
-      setMessage('Gazette issue deleted.')
+      setMessage(
+        cleanupFailed
+          ? 'Gazette issue removed, but one or more stored files could not be deleted. Remove the orphaned files from Supabase Storage or try again later.'
+          : 'Gazette issue deleted.'
+      )
     } catch (deleteIssueError) {
       console.error(deleteIssueError)
       setError(
@@ -416,8 +470,8 @@ function GazetteAdmin({ onContentChange }) {
           </p>
           <h2>Manage Gazette Issues</h2>
           <p>
-            Upload a PDF once. The first page is automatically
-            saved as a fast-loading cover image.
+            Upload a PDF up to {MAX_PDF_UPLOAD_LABEL}. The first page is
+            automatically saved as a fast-loading cover image.
           </p>
         </div>
       </div>
@@ -579,14 +633,18 @@ function GazetteAdmin({ onContentChange }) {
               </div>
 
               <div className="gazette-admin-actions">
-                <a
-                  href={gazette.link}
+                {safeExternalUrl(gazette.link) ? <a
+                  href={safeExternalUrl(gazette.link)}
                   target="_blank"
                   rel="noreferrer"
                   className="admin-secondary-button"
                 >
                   View PDF
-                </a>
+                </a> : (
+                  <span className="admin-card-description">
+                    PDF link unavailable
+                  </span>
+                )}
 
                 <button
                   type="button"
@@ -595,7 +653,7 @@ function GazetteAdmin({ onContentChange }) {
                     handleDelete(gazette)
                   }
                   disabled={
-                    deletingId === gazette.id
+                    deletingId !== null || backfilling || publishing
                   }
                 >
                   {deletingId === gazette.id

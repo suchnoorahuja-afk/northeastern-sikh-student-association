@@ -4,6 +4,7 @@ import {
   formatGazetteDate,
   getGazettes,
 } from '../lib/gazettes'
+import { safeExternalUrl } from '../lib/externalUrls'
 
 function GazetteCover({ gazette, latest = false }) {
   return (
@@ -52,6 +53,7 @@ function Gazette() {
 
   const latestIssue = gazettes[0]
   const previousIssues = gazettes.slice(1)
+  const latestLink = safeExternalUrl(latestIssue?.link)
 
   return (
     <main>
@@ -94,8 +96,8 @@ function Gazette() {
           <>
             <article className="latest-gazette">
               <div className="latest-gazette-cover">
-                <a
-                  href={latestIssue.link}
+                {latestLink ? <a
+                  href={latestLink}
                   target="_blank"
                   rel="noreferrer"
                   className="gazette-cover-link"
@@ -109,7 +111,14 @@ function Gazette() {
                     gazette={latestIssue}
                     latest
                   />
-                </a>
+                </a> : (
+                  <div className="gazette-cover-link">
+                    <span className="gazette-cover-badge">
+                      Latest Issue
+                    </span>
+                    <GazetteCover gazette={latestIssue} latest />
+                  </div>
+                )}
               </div>
 
               <div className="latest-gazette-copy">
@@ -130,14 +139,18 @@ function Gazette() {
                     'Read the newest issue of the Sikh Gazette.'}
                 </p>
 
-                <a
-                  href={latestIssue.link}
+                {latestLink ? <a
+                  href={latestLink}
                   target="_blank"
                   rel="noreferrer"
                   className="button button-blue"
                 >
                   Read Latest Issue
-                </a>
+                </a> : (
+                  <p className="gazette-link-unavailable">
+                    PDF currently unavailable
+                  </p>
+                )}
               </div>
             </article>
 
@@ -157,14 +170,17 @@ function Gazette() {
                 </div>
 
                 <div className="gazette-archive-grid">
-                  {previousIssues.map((gazette) => (
+                  {previousIssues.map((gazette) => {
+                    const gazetteLink = safeExternalUrl(gazette.link)
+
+                    return (
                     <article
                       className="archive-card gazette-archive-card"
                       key={gazette.id}
                     >
                       <div className="gazette-archive-cover">
-                        <a
-                          href={gazette.link}
+                        {gazetteLink ? <a
+                          href={gazetteLink}
                           target="_blank"
                           rel="noreferrer"
                           className="gazette-cover-link"
@@ -173,7 +189,11 @@ function Gazette() {
                           <GazetteCover
                             gazette={gazette}
                           />
-                        </a>
+                        </a> : (
+                          <div className="gazette-cover-link">
+                            <GazetteCover gazette={gazette} />
+                          </div>
+                        )}
                       </div>
 
                       <div className="gazette-archive-content">
@@ -195,17 +215,22 @@ function Gazette() {
                           </p>
                         )}
 
-                        <a
-                          href={gazette.link}
+                        {gazetteLink ? <a
+                          href={gazetteLink}
                           target="_blank"
                           rel="noreferrer"
                           className="button button-outline"
                         >
                           Read Issue
-                        </a>
+                        </a> : (
+                          <p className="gazette-link-unavailable">
+                            PDF currently unavailable
+                          </p>
+                        )}
                       </div>
                     </article>
-                  ))}
+                    )
+                  })}
                 </div>
               </>
             )}

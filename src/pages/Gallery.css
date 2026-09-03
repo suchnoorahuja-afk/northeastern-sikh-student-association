@@ -72,6 +72,12 @@
     transition: transform 0.28s ease;
 }
 
+.gallery-load-more {
+    padding: 42px 24px 72px;
+    text-align: center;
+    background: #ffffff;
+}
+
 .gallery-photo-caption {
     position: absolute;
     right: 0;

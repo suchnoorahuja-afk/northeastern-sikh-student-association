@@ -11,6 +11,7 @@ import {
   getGazettes,
   formatGazetteDate,
 } from '../lib/gazettes'
+import { safeExternalUrl } from '../lib/externalUrls'
 
 function Home() {
   const [events, setEvents] = useState([])
@@ -22,6 +23,9 @@ function Home() {
 
   const [loadingGazette, setLoadingGazette] =
     useState(true)
+  const latestGazetteLink = safeExternalUrl(
+    latestGazette?.link
+  )
 
   useEffect(() => {
     async function loadEvents() {
@@ -327,9 +331,9 @@ function Home() {
           {!loadingGazette &&
             latestGazette && (
               <>
-                {latestGazette.cover_url && (
+                {latestGazette.cover_url && latestGazetteLink && (
                   <a
-                    href={latestGazette.link}
+                    href={latestGazetteLink}
                     target="_blank"
                     rel="noreferrer"
                     className="home-gazette-cover-link"
@@ -343,6 +347,18 @@ function Home() {
                       fetchPriority="high"
                     />
                   </a>
+                )}
+
+                {latestGazette.cover_url && !latestGazetteLink && (
+                  <div className="home-gazette-cover-link">
+                    <img
+                      src={latestGazette.cover_url}
+                      alt={`${latestGazette.title} cover`}
+                      className="home-gazette-cover"
+                      loading="eager"
+                      fetchPriority="high"
+                    />
+                  </div>
                 )}
 
                 <div className="home-gazette-info">
@@ -368,14 +384,18 @@ function Home() {
                     </p>
                   )}
 
-                  <a
-                    href={latestGazette.link}
+                  {latestGazetteLink ? <a
+                    href={latestGazetteLink}
                     target="_blank"
                     rel="noreferrer"
                     className="text-link"
                   >
                     Read issue →
-                  </a>
+                  </a> : (
+                    <span className="gazette-link-unavailable">
+                      PDF currently unavailable
+                    </span>
+                  )}
                 </div>
               </>
             )}

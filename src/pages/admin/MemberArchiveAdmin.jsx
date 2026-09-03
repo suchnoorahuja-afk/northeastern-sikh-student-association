@@ -1,6 +1,20 @@
 import { useEffect, useState } from 'react'
-import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
+import { normalizeExternalUrl } from '../../lib/externalUrls'
+import { safeExternalUrl } from '../../lib/externalUrls'
+import {
+    MAX_EXCEL_UPLOAD_BYTES,
+    MAX_EXCEL_UPLOAD_LABEL,
+} from '../../lib/uploadFiles'
+
+const MEMBER_HEADERS = [
+    'Name',
+    'Role',
+    'Graduation Year',
+    'Phone Number',
+    'Email',
+    'LinkedIn',
+]
 
 function MemberArchiveAdmin({ onContentChange }) {
     const [previewMembers, setPreviewMembers] =
@@ -74,6 +88,13 @@ function MemberArchiveAdmin({ onContentChange }) {
         }
 
         try {
+            if (file.size > MAX_EXCEL_UPLOAD_BYTES) {
+                throw new Error(
+                    `The Excel workbook must be ${MAX_EXCEL_UPLOAD_LABEL} or smaller.`
+                )
+            }
+
+            const XLSX = await import('xlsx')
             const buffer =
                 await file.arrayBuffer()
 
@@ -97,9 +118,12 @@ function MemberArchiveAdmin({ onContentChange }) {
             const firstSheetName =
                 workbook.SheetNames[0]
 
-            if (!firstSheetName) {
+            if (
+                firstSheetName !== 'Member Archive' ||
+                workbook.SheetNames[1] !== 'Roles'
+            ) {
                 throw new Error(
-                    'The Excel file does not contain a worksheet.'
+                    'Use the SSAN template with “Member Archive” as the first worksheet and “Roles” as the second worksheet.'
                 )
             }
 
@@ -107,6 +131,23 @@ function MemberArchiveAdmin({ onContentChange }) {
                 workbook.Sheets[
                 firstSheetName
                 ]
+
+            const sheetRows = XLSX.utils.sheet_to_json(
+                worksheet,
+                { header: 1, defval: '', blankrows: false }
+            )
+            const headers = (sheetRows[0] || []).map((header) =>
+                String(header).trim()
+            )
+            const missingHeaders = MEMBER_HEADERS.filter(
+                (header) => !headers.includes(header)
+            )
+
+            if (missingHeaders.length > 0) {
+                throw new Error(
+                    `The Member Archive worksheet is missing required column(s): ${missingHeaders.join(', ')}.`
+                )
+            }
 
             const rows =
                 XLSX.utils.sheet_to_json(
@@ -122,25 +163,26 @@ function MemberArchiveAdmin({ onContentChange }) {
                 )
             }
 
-            const formattedMembers =
-                rows
-                    .map((row, index) => {
+            const currentYear = new Date().getFullYear()
+            const seenMembers = new Set()
+            const formattedMembers = rows.map((row, index) => {
+                        const rowNumber = index + 2
                         const name = String(
-                            row.Name ||
-                            row.name ||
-                            ''
+                            row.Name || ''
                         ).trim()
 
+                        if (!name) {
+                            throw new Error(
+                                `Name is required in Excel row ${rowNumber}.`
+                            )
+                        }
+
                         const role = String(
-                            row.Role ||
-                            row.role ||
-                            ''
+                            row.Role || ''
                         ).trim()
 
                         const graduationYearValue =
-                            row['Graduation Year'] ??
-                            row.graduation_year ??
-                            ''
+                            row['Graduation Year'] ?? ''
 
                         const graduationYear =
                             graduationYearValue === ''
@@ -151,26 +193,55 @@ function MemberArchiveAdmin({ onContentChange }) {
 
                         const phoneNumber =
                             String(
-                                row['Phone Number'] ||
-                                row.Phone ||
-                                row.phone ||
-                                row.phone_number ||
-                                ''
+                                row['Phone Number'] || ''
                             ).trim()
 
                         const email = String(
-                            row.Email ||
-                            row.email ||
-                            ''
+                            row.Email || ''
                         ).trim()
 
                         const linkedin =
                             String(
-                                row.LinkedIn ||
-                                row.Linkedin ||
-                                row.linkedin ||
-                                ''
+                                row.LinkedIn || ''
                             ).trim()
+
+                        if (
+                            graduationYear &&
+                            (!/^\d{4}$/.test(graduationYear) ||
+                                Number(graduationYear) < 1900 ||
+                                Number(graduationYear) > currentYear + 10)
+                        ) {
+                            throw new Error(
+                                `Graduation Year in Excel row ${rowNumber} must be a sensible four-digit year.`
+                            )
+                        }
+
+                        if (
+                            email &&
+                            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+                        ) {
+                            throw new Error(
+                                `Email in Excel row ${rowNumber} is not valid.`
+                            )
+                        }
+
+                        let normalizedLinkedin
+                        try {
+                            normalizedLinkedin = normalizeExternalUrl(linkedin)
+                        } catch (urlError) {
+                            throw new Error(
+                                `LinkedIn in Excel row ${rowNumber}: ${urlError.message}`,
+                                { cause: urlError }
+                            )
+                        }
+
+                        const duplicateKey = `${name.toLowerCase()}|${graduationYear}`
+                        if (seenMembers.has(duplicateKey)) {
+                            throw new Error(
+                                `Duplicate member in Excel row ${rowNumber}: ${name}${graduationYear ? ` (${graduationYear})` : ''}.`
+                            )
+                        }
+                        seenMembers.add(duplicateKey)
 
                         return {
                             name,
@@ -188,7 +259,7 @@ function MemberArchiveAdmin({ onContentChange }) {
                             years_active: '',
 
                             email,
-                            linkedin,
+                            linkedin: normalizedLinkedin,
 
                             /*
                              * We store Phone Number in
@@ -202,31 +273,12 @@ function MemberArchiveAdmin({ onContentChange }) {
                                 index,
                         }
                     })
-                    .filter(
-                        (member) =>
-                            member.name
-                    )
 
             if (
                 formattedMembers.length === 0
             ) {
                 throw new Error(
                     'No valid members were found. Make sure the spreadsheet has a Name column.'
-                )
-            }
-
-            const invalidYear =
-                formattedMembers.find(
-                    (member) =>
-                        member.graduation_year &&
-                        !/^\d{4}$/.test(
-                            member.graduation_year
-                        )
-                )
-
-            if (invalidYear) {
-                throw new Error(
-                    `Graduation Year for ${invalidYear.name} must be a four-digit year, such as 2027.`
                 )
             }
 
@@ -356,7 +408,7 @@ function MemberArchiveAdmin({ onContentChange }) {
                 <p>
                     Upload an Excel file using
                     the SSAN member archive
-                    template.
+                    template. Maximum size: {MAX_EXCEL_UPLOAD_LABEL}.
                 </p>
 
                 <input
@@ -564,10 +616,10 @@ function MemberArchiveAdmin({ onContentChange }) {
                                             </td>
 
                                             <td>
-                                                {member.linkedin ? (
+                                                {safeExternalUrl(member.linkedin) ? (
                                                     <a
                                                         href={
-                                                            member.linkedin
+                                                            safeExternalUrl(member.linkedin)
                                                         }
                                                         target="_blank"
                                                         rel="noreferrer"

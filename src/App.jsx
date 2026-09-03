@@ -1,4 +1,9 @@
-import { useEffect, useState } from 'react'
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useState,
+} from 'react'
 import {
   BrowserRouter,
   Routes,
@@ -10,16 +15,17 @@ import {
 import './App.css'
 
 import Home from './pages/Home'
-import Schedule from './pages/Schedule'
-import EBoard from './pages/EBoard'
-import Gazette from './pages/Gazette'
-import MemberArchive from './pages/MemberArchive'
-import Gallery from './pages/Gallery'
-import Applications from './pages/Applications'
-import About from './pages/About'
-import Admin from './pages/Admin'
-import NotFound from './pages/NotFound'
 import RouteMetadata from './components/RouteMetadata'
+
+const Schedule = lazy(() => import('./pages/Schedule'))
+const EBoard = lazy(() => import('./pages/EBoard'))
+const Gazette = lazy(() => import('./pages/Gazette'))
+const MemberArchive = lazy(() => import('./pages/MemberArchive'))
+const Gallery = lazy(() => import('./pages/Gallery'))
+const Applications = lazy(() => import('./pages/Applications'))
+const About = lazy(() => import('./pages/About'))
+const Admin = lazy(() => import('./pages/Admin'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 function SiteLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -101,7 +107,15 @@ function SiteLayout() {
         </nav>
       </header>
 
-      <Routes>
+      <Suspense
+        fallback={(
+          <main className="route-loading" role="status">
+            <span className="route-loading-mark" />
+            <p>Loading...</p>
+          </main>
+        )}
+      >
+        <Routes>
         <Route path="/" element={<Home />} />
 
         <Route
@@ -145,7 +159,8 @@ function SiteLayout() {
         />
 
         <Route path="*" element={<NotFound />} />
-      </Routes>
+        </Routes>
+      </Suspense>
 
       <footer className="site-footer">
         <div className="footer-main">

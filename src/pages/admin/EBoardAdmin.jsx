@@ -1,5 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import {
+    MAX_IMAGE_UPLOAD_LABEL,
+    optimizeImageFile,
+    validateImageFile,
+} from '../../lib/uploadFiles'
 
 function EBoardAdmin({ onContentChange }) {
     const [members, setMembers] = useState([])
@@ -17,6 +22,8 @@ function EBoardAdmin({ onContentChange }) {
         useState('')
 
     const [saving, setSaving] = useState(false)
+    const [deletingId, setDeletingId] = useState(null)
+    const [reordering, setReordering] = useState(false)
 
     useEffect(() => {
         loadMembers()
@@ -58,7 +65,18 @@ function EBoardAdmin({ onContentChange }) {
         }
     }
 
-    function handlePhotoChange(event) {
+    const photoPreviewUrl = useMemo(
+        () => photo ? URL.createObjectURL(photo) : '',
+        [photo]
+    )
+
+    useEffect(() => () => {
+        if (photoPreviewUrl) {
+            URL.revokeObjectURL(photoPreviewUrl)
+        }
+    }, [photoPreviewUrl])
+
+    async function handlePhotoChange(event) {
         const file = event.target.files?.[0]
 
         setErrorMessage('')
@@ -69,9 +87,11 @@ function EBoardAdmin({ onContentChange }) {
             return
         }
 
-        if (!file.type.startsWith('image/')) {
+        try {
+            await validateImageFile(file)
+        } catch (validationError) {
             setErrorMessage(
-                'Please select an image file.'
+                validationError.message
             )
 
             setPhoto(null)
@@ -112,8 +132,9 @@ function EBoardAdmin({ onContentChange }) {
     }
 
     async function uploadPhoto(file) {
+        const optimizedFile = await optimizeImageFile(file)
         const extension =
-            file.name.split('.').pop()?.toLowerCase() ||
+            optimizedFile.name.split('.').pop()?.toLowerCase() ||
             'jpg'
 
         const safeName = `${Date.now()}-${Math.random()
@@ -125,7 +146,8 @@ function EBoardAdmin({ onContentChange }) {
         const { error: uploadError } =
             await supabase.storage
                 .from('eboard')
-                .upload(filePath, file, {
+                .upload(filePath, optimizedFile, {
+                    contentType: optimizedFile.type,
                     cacheControl: '3600',
                     upsert: false,
                 })
@@ -200,11 +222,19 @@ function EBoardAdmin({ onContentChange }) {
 
                 if (error) {
                     if (newlyUploadedPath) {
-                        await supabase.storage
+                        const { error: cleanupError } =
+                            await supabase.storage
                             .from('eboard')
                             .remove([
                                 newlyUploadedPath,
                             ])
+
+                        if (cleanupError) {
+                            throw new Error(
+                                `${error.message}. The newly uploaded photo also could not be cleaned up; check Supabase Storage for an orphaned file.`,
+                                { cause: error }
+                            )
+                        }
                     }
 
                     throw error
@@ -227,6 +257,9 @@ function EBoardAdmin({ onContentChange }) {
                         console.error(
                             'Old photo could not be removed:',
                             oldPhotoError
+                        )
+                        setErrorMessage(
+                            'Member updated, but the previous stored photo could not be deleted. Remove the orphaned file from Supabase Storage or try again later.'
                         )
                     }
                 }
@@ -257,11 +290,19 @@ function EBoardAdmin({ onContentChange }) {
 
                 if (error) {
                     if (newlyUploadedPath) {
-                        await supabase.storage
+                        const { error: cleanupError } =
+                            await supabase.storage
                             .from('eboard')
                             .remove([
                                 newlyUploadedPath,
                             ])
+
+                        if (cleanupError) {
+                            throw new Error(
+                                `${error.message}. The newly uploaded photo also could not be cleaned up; check Supabase Storage for an orphaned file.`,
+                                { cause: error }
+                            )
+                        }
                     }
 
                     throw error
@@ -295,6 +336,7 @@ function EBoardAdmin({ onContentChange }) {
 
         setMessage('')
         setErrorMessage('')
+        setDeletingId(member.id)
 
         try {
             const { error: deleteError } =
@@ -307,6 +349,8 @@ function EBoardAdmin({ onContentChange }) {
                 throw deleteError
             }
 
+            let cleanupFailed = false
+
             if (member.photo_path) {
                 const { error: storageError } =
                     await supabase.storage
@@ -315,11 +359,14 @@ function EBoardAdmin({ onContentChange }) {
 
                 if (storageError) {
                     console.error(storageError)
+                    cleanupFailed = true
                 }
             }
 
             setMessage(
-                `${member.name} was removed from the E-Board.`
+                cleanupFailed
+                    ? `${member.name} was removed, but the stored photo could not be deleted. Remove the orphaned file from Supabase Storage or try again later.`
+                    : `${member.name} was removed from the E-Board.`
             )
 
             await loadMembers()
@@ -330,6 +377,8 @@ function EBoardAdmin({ onContentChange }) {
             setErrorMessage(
                 `Could not delete member: ${error.message}`
             )
+        } finally {
+            setDeletingId(null)
         }
     }
 
@@ -368,6 +417,7 @@ function EBoardAdmin({ onContentChange }) {
 
         setMessage('')
         setErrorMessage('')
+        setReordering(true)
 
         const reordered = [...members]
 
@@ -404,6 +454,8 @@ function EBoardAdmin({ onContentChange }) {
             )
 
             await loadMembers()
+        } finally {
+            setReordering(false)
         }
     }
 
@@ -462,7 +514,7 @@ function EBoardAdmin({ onContentChange }) {
                     <label>
                         {editingMember
                             ? 'Replace Photo'
-                            : 'Member Photo'}
+                            : 'Member Photo'} (JPEG, PNG, or WebP; maximum {MAX_IMAGE_UPLOAD_LABEL})
 
                         <input
                             id="eboard-photo"
@@ -482,9 +534,7 @@ function EBoardAdmin({ onContentChange }) {
                     {photo && (
                         <div className="eboard-photo-preview">
                             <img
-                                src={URL.createObjectURL(
-                                    photo
-                                )}
+                                src={photoPreviewUrl}
                                 alt="Selected preview"
                             />
 
@@ -607,7 +657,9 @@ function EBoardAdmin({ onContentChange }) {
                                                 <button
                                                     type="button"
                                                     disabled={
-                                                        index === 0
+                                                        index === 0 ||
+                                                        reordering ||
+                                                        deletingId !== null
                                                     }
                                                     onClick={() =>
                                                         moveMember(
@@ -625,7 +677,9 @@ function EBoardAdmin({ onContentChange }) {
                                                     disabled={
                                                         index ===
                                                         members.length -
-                                                        1
+                                                        1 ||
+                                                        reordering ||
+                                                        deletingId !== null
                                                     }
                                                     onClick={() =>
                                                         moveMember(
@@ -642,6 +696,7 @@ function EBoardAdmin({ onContentChange }) {
                                             <button
                                                 type="button"
                                                 className="admin-secondary-button"
+                                                disabled={deletingId !== null || reordering}
                                                 onClick={() =>
                                                     startEditing(
                                                         member
@@ -654,13 +709,16 @@ function EBoardAdmin({ onContentChange }) {
                                             <button
                                                 type="button"
                                                 className="admin-delete-button"
+                                                disabled={deletingId !== null || reordering}
                                                 onClick={() =>
                                                     handleDelete(
                                                         member
                                                     )
                                                 }
                                             >
-                                                Delete
+                                                {deletingId === member.id
+                                                    ? 'Deleting...'
+                                                    : 'Delete'}
                                             </button>
                                         </div>
                                     </div>
